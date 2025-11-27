@@ -1,0 +1,10 @@
+user_id,account_id,tx_id,amount,type_tx,state,account_qty,user_qty,tx_date
+3001,ACCT-3001-A,1003,-1000.0,transfer_out,completed,2,1,2024-04-10
+3001,ACCT-3001-B,7001,3950.0,transfer_in,completed,2,2,2024-10-15
+3002,ACCT-3002-B,2007,-3950.0,transfer_out,completed,2,1,2024-10-15
+3003,ACCT-3003-B,3005,1.0,micro_deposit,completed,2,1,2024-07-21
+3003,ACCT-3003-B,3006,1.0,micro_deposit,completed,2,2,2024-07-21
+3004,ACCT-3004-B,4004,100000.0,international_in_transfer,completed,4,1,2024-10-01
+3004,ACCT-3004-B,4005,50000.0,international_in_transfer,completed,4,2,2024-10-01
+3004,ACCT-3004-B,4006,10000.0,international_in_transfer,review,4,3,2024-10-01
+3004,ACCT-3004-D,4011,-2000.0,transfer_out,completed,4,4,2024-11-20
