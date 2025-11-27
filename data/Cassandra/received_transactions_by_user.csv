@@ -1,0 +1,5 @@
+user_id,date,tx_id,account_id,sender_acc_id,amount,status,tx_type
+3001,2024-10-15,7001,ACCT-3001-B,ACCT-3002-B,3950.0,completed,transfer_in
+3003,2024-07-21,7002,ACCT-3003-B,ACCT-3004-B,1.0,completed,micro_deposit
+3003,2024-07-22,7003,ACCT-3003-B,ACCT-3004-B,1.0,completed,micro_deposit
+3004,2024-10-01,7004,ACCT-3004-B,ACCT-3001-B,100000.0,completed,international_in_transfer

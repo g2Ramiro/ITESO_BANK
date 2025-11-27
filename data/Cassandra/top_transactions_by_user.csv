@@ -1,0 +1,17 @@
+user_id,account_id,tx_id,amount,type_tx,state,account_qty,user_qty,tx_date
+3001,ACCT-3001-B,1005,50000.0,deposit,completed,2,1,2024-03-01
+3001,ACCT-3001-B,7001,3950.0,transfer_in,completed,2,2,2024-10-15
+3001,ACCT-3001-A,1002,2000.0,deposit,completed,2,1,2024-03-05
+3002,ACCT-3002-B,2007,-3950.0,transfer_out,completed,2,2,2024-10-15
+3002,ACCT-3002-B,2003,-1000.0,credit_purchase,completed,2,1,2023-03-20
+3002,ACCT-3002-A,2001,500.0,deposit,completed,2,1,2023-03-15
+3003,ACCT-3003-A,3004,-50.0,atm_withdrawal,completed,2,1,2024-07-21
+3003,ACCT-3003-A,3001,-5.0,online_purchase,completed,2,1,2024-07-20
+3003,ACCT-3003-A,3002,-5.0,online_purchase,completed,2,1,2024-07-20
+3004,ACCT-3004-B,4004,100000.0,international_in_transfer,completed,4,1,2024-10-01
+3004,ACCT-3004-B,4005,50000.0,international_in_transfer,completed,4,1,2024-10-01
+3004,ACCT-3004-D,4010,2000.0,deposit,completed,4,1,2024-10-15
+3005,ACCT-3005-A,5001,100.0,initial_deposit,completed,1,1,2022-01-10
+3005,ACCT-3005-A,5002,-100.0,payment,completed,1,1,2022-02-10
+3006,ACCT-3006-A,6001,300.0,deposit,completed,1,1,2024-11-10
+3006,ACCT-3006-A,6002,-49.45,payment,completed,1,1,2024-11-11

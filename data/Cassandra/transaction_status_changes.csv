@@ -1,0 +1,21 @@
+trs_id,account_id,user_id,old_status,new_status,change_date,change_reason
+1,ACCT-3001-A,3001,,activa,2024-01-15T09:00:00Z,Cuenta creada
+2,ACCT-3001-B,3001,,activa,2024-02-01T08:00:00Z,Cuenta ahorro premium creada
+3,ACCT-3002-A,3002,,activa,2023-03-10T14:55:00Z,Cuenta creada
+4,ACCT-3002-B,3002,,activa,2023-03-10T14:55:00Z,Cuenta creada
+4,ACCT-3002-B,3002,activa,vencida,2024-08-01T10:30:00Z,Pago vencido
+5,ACCT-3003-A,3003,,activa,2024-07-19T18:21:00Z,Cuenta creada
+5,ACCT-3003-A,3003,activa,activa,2024-07-20T07:00:00Z,Flag por accesos desde VPN detectados
+6,ACCT-3003-B,3003,,activa,2024-07-19T18:22:00Z,Cuenta creada
+6,ACCT-3003-B,3003,activa,suspendida,2024-07-22T10:00:00Z,Detectado patrón de micro-transacciones (posible bot)
+7,ACCT-3004-A,3004,,activa,2024-10-01T05:00:00Z,Cuenta creada
+7,ACCT-3004-A,3004,activa,bloqueada,2024-10-01T05:05:00Z,Accesos simultáneos desde múltiples IPs / botnet detected
+8,ACCT-3004-B,3004,,activa,2024-10-01T05:00:00Z,Cuenta creada
+8,ACCT-3004-B,3004,activa,bloqueada,2024-10-01T06:30:00Z,Recepción de transferencias desde países de alto riesgo
+9,ACCT-3004-C,3004,,activa,2024-10-01T05:00:00Z,Cuenta creada
+9,ACCT-3004-C,3004,activa,vencida,2024-11-05T09:10:00Z,Patrón de pagos automatizados fallidos
+10,ACCT-3004-D,3004,,activa,2024-10-01T05:00:00Z,Cuenta creada
+10,ACCT-3004-D,3004,activa,cerrada,2024-12-01T08:00:00Z,Cierre por investigación y actividad inconsistente
+11,ACCT-3005-A,3005,,activa,2022-01-10T10:00:00Z,Cuenta creada
+11,ACCT-3005-A,3005,activa,activa,2024-11-01T08:00:00Z,Flag por inactividad prolongada y ausencia de logins
+12,ACCT-3006-A,3006,,activa,2024-11-10T10:05:30Z,Cuenta creada

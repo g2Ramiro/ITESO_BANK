@@ -1,0 +1,7 @@
+user_id,date,tx_id,account_id,sender_acc_id,amount,status,tx_type
+3003,2024-07-21,7002,ACCT-3003-B,ACCT-3004-B,1.0,completed,micro_deposit
+3003,2024-07-22,7003,ACCT-3003-B,ACCT-3004-B,1.0,completed,micro_deposit
+3003,2024-07-20,3001,ACCT-3003-A,MERCHANT-123,-5.0,completed,online_purchase
+3003,2024-07-20,3002,ACCT-3003-A,MERCHANT-123,-5.0,completed,online_purchase
+3004,2024-10-20,4008,ACCT-3004-C,AUTOPAY-SERVICE-01,500.0,failed,auto_payment
+3004,2024-11-01,4009,ACCT-3004-C,AUTOPAY-SERVICE-01,500.0,failed,auto_payment
