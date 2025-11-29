@@ -1,0 +1,5 @@
+tx_id,amount,tx_ts,type,dgraph.type,associated_location
+TX_1001,500.0,2024-01-01,deposit,Transaction,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}"
+TX_1002,200.0,2024-01-02,payment,Transaction,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}"
+TX_9001,10000.0,2024-06-01,transfer,Transaction,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}"
+TX_9002,9500.0,2024-06-02,transfer,Transaction,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}"

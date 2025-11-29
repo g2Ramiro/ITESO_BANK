@@ -1,0 +1,6 @@
+device_id,device_location,dgraph.type
+DEV_3001,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
+DEV_3002,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
+DEV_FRAUD_RING_X,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
+DEV_3005,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
+DEV_3006,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device

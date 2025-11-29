@@ -1,0 +1,6 @@
+ip_addr,ip_reputation,dgraph.type
+10.0.0.3001,10,IpAddress
+10.0.0.3002,10,IpAddress
+192.168.66.6,99,IpAddress
+10.0.0.3005,10,IpAddress
+10.0.0.3006,10,IpAddress

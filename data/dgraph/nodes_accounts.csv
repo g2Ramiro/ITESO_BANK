@@ -1,0 +1,12 @@
+account_id,balance,risk_score,is_flagged,dgraph.type
+ACCT-3001-A,31971.33,0,false,Account
+ACCT-3001-B,1250.53,0,false,Account
+ACCT-3002-A,13751.46,0,false,Account
+ACCT-3002-B,11160.53,0,false,Account
+ACCT-3003-A,36823.56,90,true,Account
+ACCT-3003-B,33834.97,90,true,Account
+ACCT-3004-A,44608.97,90,true,Account
+ACCT-3004-B,4346.94,90,true,Account
+ACCT-3004-C,21096.09,90,true,Account
+ACCT-3005-A,1489.86,0,false,Account
+ACCT-3006-A,10931.89,0,false,Account
