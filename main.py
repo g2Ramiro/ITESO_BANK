@@ -5,10 +5,16 @@ from connect import CLUSTER_IPS, KEYSPACE
 from populate import populate_cassandra, populate_dgraph
 from Cassandra import model as cas
 from Dgraph import querys as dg_qry
+from pymongo import MongoClient
+from Mongo.loader import populate_database as populateMongo
 
 # =====================================================================
 # UTILERÍAS
 # =====================================================================
+
+
+
+
 
 def get_cassandra_session():
 
@@ -285,6 +291,19 @@ def main():
         print("   (Si es la primera vez, usa la opción 4 -> 1 para poblar)")
         print(f"   Detalle: {e}")
 
+    # 3. Conexion Mongo
+    MONGO_URI = "mongodb://localhost:27017/"
+    DB_NAME = "fraude_financiero"
+    mongo_client = None
+    mongo_db = None
+    try:
+        mongo_client = MongoClient(MONGO_URI)
+        mongo_db = mongo_client[DB_NAME]
+        print("🔌 MongoDB conectado.")
+    except Exception as e:
+       print(f" Error Conexion Mongo: {e}")
+
+
     while True:
         print("\n\n############################################################")
         print("      🕵️  SISTEMA DETECCION FRAUDES ITESOBANK  🕵️")
@@ -317,7 +336,7 @@ def main():
 
         elif opcion == "4":
             print("\n[⚙️ MODO ADMINISTRADOR]")
-            print("1. Poblar Cassandra y Dgraph (Carga Inicial)")
+            print("1. Poblar Cassandra, Mongo, Dgraph (Carga Inicial)")
             print("2. DROP ALL DATA (Simulación)")
             sub_op = input(">> ").strip()
 
@@ -327,12 +346,20 @@ def main():
                     populate_cassandra()
                 except Exception as e:
                     print(f"Error en Cassandra: {e}")
+                
+                print("\n🚀 Iniciando población de Mongo...")
+                try:
+                    populateMongo(mongo_db,"data/mongo")
+                except Exception as e:
+                    print(f"Error en Mongo {e}")
 
+                
                 print("\n🚀 Iniciando población de Dgraph...")
                 try:
                     populate_dgraph() # Ya tiene su propia gestión de conexión interna si usas el código anterior
                 except Exception as e:
                     print(f"Error en Dgraph: {e}")
+
 
                 print("\n✅ Procesos de carga finalizados.")
 
@@ -344,13 +371,47 @@ def main():
                     except: pass
 
             elif sub_op == "2":
-                print("⚠️ (Simulación) Eliminando registros...")
+                print("\n⚠️  ATENCIÓN: ELIMINANDO DATOS REALES...")
+                confirm = input("¿Estás seguro? (s/n): ").lower()
                 time.sleep(1)
-                print("Sistema reseteado (simulado).")
+                if confirm == "s":
+                    # --- BORRADO MONGO ---
+                    if mongo_client:
+                        try:
+                            # Esto borra la base de datos completa 'fraude_financiero'
+                            mongo_client.drop_database("fraude_financiero")
+                            print(f"🗑️ Base de datos Mongo 'fraude_financiero' eliminada.") 
+                        except Exception as e:
+                            print(f"❌ Error borrando Mongo: {e}")
+                    else:
+                        print("⚠️ No hay conexión a Mongo para borrar.")
+
+                    # if cas_session:
+                    #     try:
+                    #         # Aquí tendrías que hacer TRUNCATE a tus tablas
+                    #         tablas = ["transactions_by_user", "accounts_by_transactions", "realtime_transactions"] # etc...
+                    #         for t in tablas:
+                    #             cas_session.execute(f"TRUNCATE {KEYSPACE}.{t};")
+                    #         print("🗑️ Tablas de Cassandra truncadas.")
+                    #     except Exception as e:
+                    #         print(f"❌ Error borrando Cassandra: {e}")
+
+                    # --- BORRADO DGRAPH (Opcional) ---
+                    # if dg_client:
+                    #     op = cn.api.Operation(drop_all=True)
+                    #     dg_client.alter(op)
+                    #     print("🗑️ Dgraph reseteado (Drop All).")
+
+                    print("\n✅ Sistema reseteado correctamente.")
+                else:
+                    print("Operación cancelada.")
 
         elif opcion == "0":
             print("Cerrando conexiones...")
             cn.close_client_stub(client_stub)
+            if mongo_client:
+                mongo_client.close()
+                print("Mongo desconectado correctamente.")
             if cluster:
                 cluster.shutdown()
             break
