@@ -1,23 +1,42 @@
 import time
 from cassandra.cluster import Cluster
+import connect as cn
 from connect import CLUSTER_IPS, KEYSPACE
-from populate import populate_cassandra
+from populate import populate_cassandra, populate_dgraph
 from Cassandra import model as cas
+from Dgraph import querys as dg_qry
 
+# =====================================================================
+# UTILERÍAS
+# =====================================================================
 
-# Utilidad para conectar a Cassandra
 def get_cassandra_session():
+
     ips = [ip.strip() for ip in CLUSTER_IPS.split(",") if ip.strip()]
+    if not ips:
+        raise ValueError("No se han definido IPs para Cassandra en connect.py")
+
     cluster = Cluster(ips)
     session = cluster.connect()
     session.set_keyspace(KEYSPACE)
     return cluster, session
 
+def ejecutar(db_name, menu_num, descripcion, param=None):
+    """
+    Función auxiliar para simular/ejecutar opciones que aún no tienen
+    lógica implementada (ej: MongoDB) o para debug.
+    """
+    print(f"\n[🚧 MOCK] Ejecutando consulta en {db_name}...")
+    print(f"   Opción #{menu_num}: {descripcion}")
+    if param:
+        print(f"   Parámetro: {param}")
+    print("   ✅ Resultado simulado: Operación registrada/consultada con éxito.")
+    time.sleep(0.5)
 
 # =====================================================================
 # 1. INVESTIGACIÓN INDIVIDUAL
 # =====================================================================
-def menu_investigacion_cliente(session):
+def menu_investigacion_cliente(session, client):
     print("\n============== 🕵️ INVESTIGACIÓN DE OBJETIVO (CLIENTE) ==============")
     print("Ingrese el ID o Nombre del cliente a investigar:")
     cliente_id = input(">> ").strip()
@@ -49,7 +68,7 @@ def menu_investigacion_cliente(session):
 
         opcion = input("   >> ").strip()
 
-        # Mongo / Dgraph simulados
+        # --- MONGO DB (Simulados con la función ejecutar) ---
         if opcion == "1":
             ejecutar("MongoDB", 3, "Información de Cuentas", cliente_id)
         elif opcion == "2":
@@ -58,10 +77,14 @@ def menu_investigacion_cliente(session):
             ejecutar("MongoDB", 2, "Inicio de Sesión", cliente_id)
         elif opcion == "8":
             ejecutar("MongoDB", 12, "Perfil de riesgo usuario", cliente_id)
-        elif opcion == "9":
-            ejecutar("Dgraph", 6, "Scoring de conexiones", cliente_id)
 
-        # Cassandra reales: usamos las show_* del módulo cas
+        # --- DGRAPH ---
+        elif opcion == "9":
+            print(f"Analizando conexiones de riesgo para el usuario {cliente_id}...")
+            # Llamada al script queries.py
+            dg_qry.query_risk_scoring(client, cliente_id)
+
+        # --- CASSANDRA ---
         elif opcion in {"4", "5", "6", "7"}:
             try:
                 uid = int(cliente_id)
@@ -87,7 +110,7 @@ def menu_investigacion_cliente(session):
 # =====================================================================
 # 2. MONITOR DE AMENAZAS
 # =====================================================================
-def menu_monitor_amenazas(session):
+def menu_monitor_amenazas(session, client):
     while True:
         print("\n============== 🛡️ MONITOR DE AMENAZAS GLOBALES ==============")
         print("   --- 🚨 Alertas Activas (Live) ---")
@@ -110,26 +133,54 @@ def menu_monitor_amenazas(session):
 
         opcion = input("   >> ").strip()
 
+        # --- CASSANDRA ---
         if opcion == "1":
             cas.show_transacciones_fuera_de_rango_global(session, limit=100)
         elif opcion == "2":
             cas.show_intentos_rechazados_global(session, limit=100)
+
+        # --- MONGO DB ---
         elif opcion == "3":
             ejecutar("MongoDB", 11, "Cambios masivos IP/Disp")
-        elif opcion == "4":
-            ejecutar("Dgraph", 1, "Colaboración fraudulenta")
-        elif opcion == "5":
-            ejecutar("Dgraph", 3, "Lavado de dinero")
-        elif opcion == "6":
-            ejecutar("Dgraph", 7, "Cuentas fantasmas")
-        elif opcion == "7":
-            ejecutar("Dgraph", 8, "Suplantación de identidad")
-        elif opcion == "8":
-            ejecutar("Dgraph", 9, "Rutas sospechosas")
         elif opcion == "9":
             ejecutar("MongoDB", 6, "Cuentas Flageadas")
         elif opcion == "10":
             ejecutar("MongoDB", 7, "Comportamiento errático")
+
+        # --- DGRAPH ---
+        elif opcion == "4":
+            # Anillos de Colaboración
+            dev_input = input("   Ingrese ID del Dispositivo sospechoso (ej: DEV_FRAUD_RING_X): ").strip() or "DEV_FRAUD_RING_X"
+            dg_qry.query_fraud_ring(client, dev_input)
+
+        elif opcion == "5":
+            # Lavado de dinero
+            monto_input = input("   Monto mínimo para alertar (default 5000): ").strip() or "5000"
+            try:
+                dg_qry.query_money_laundering_pattern(client, float(monto_input))
+            except ValueError:
+                print("   Error: El monto debe ser un número.")
+
+        elif opcion == "6":
+            # Cuentas Fantasmas
+            bal_input = input("   Saldo máximo (default 100): ").strip() or "100"
+            try:
+                dg_qry.query_ghost_accounts(client, float(bal_input), min_txs=2)
+            except ValueError:
+                print("   Error: El saldo debe ser un número.")
+
+        elif opcion == "7":
+            # Suplantación
+            dg_qry.query_identity_theft(client)
+
+        elif opcion == "8":
+            # Rutas sospechosas
+            acc_input = input("   Ingrese ID de Cuenta Origen para rastrear (ej: ACCT-3004-B): ").strip()
+            if acc_input:
+                dg_qry.query_suspicious_path(client, acc_input)
+            else:
+                print("   ⚠ ID de cuenta requerido.")
+
         elif opcion == "0":
             break
         else:
@@ -139,7 +190,7 @@ def menu_monitor_amenazas(session):
 # =====================================================================
 # 3. ANALÍTICA FORENSE
 # =====================================================================
-def menu_analitica_forense(session):
+def menu_analitica_forense(session, client):
     while True:
         print("\n============== 📊 ANALÍTICA FORENSE Y REPORTES ==============")
         print("   1. Top Cuentas por Volumen/Actividad (Cassandra #5)")
@@ -155,38 +206,54 @@ def menu_analitica_forense(session):
 
         opcion = input("   >> ").strip()
 
+        # --- CASSANDRA ---
         if opcion == "1":
             cas.show_top_cuentas_global(session, limit=20)
 
         elif opcion == "2":
             uid_raw = input("   Ingrese user_id para analizar su frecuencia: ").strip()
-            try:
-                uid = int(uid_raw)
-            except ValueError:
+            if uid_raw.isdigit():
+                cas.show_cuentas_por_usuario(session, int(uid_raw))
+            else:
                 print("   ⚠ user_id debe ser numérico.")
-                continue
-            cas.show_cuentas_por_usuario(session, uid)
 
         elif opcion == "3":
             uid_raw = input("   Ingrese user_id para ver sus operaciones de mayor monto: ").strip()
-            try:
-                uid = int(uid_raw)
-            except ValueError:
+            if uid_raw.isdigit():
+                cas.show_top_operaciones_usuario(session, int(uid_raw), limit=20)
+            else:
                 print("   ⚠ user_id debe ser numérico.")
-                continue
-            cas.show_top_operaciones_usuario(session, uid, limit=20)
 
+        elif opcion == "8":
+            cas.show_duplicados_global(session, limit=100)
+
+        # --- MONGO DB ---
         elif opcion == "4":
             ejecutar("MongoDB", 5, "Mapa global de saldos y usuarios")
         elif opcion == "5":
             ejecutar("MongoDB", 10, "Auditoría de cuentas nuevas (alto riesgo)")
-        elif opcion == "6":
-            ejecutar("Dgraph", 10, "Análisis de propagación de riesgo")
-        elif opcion == "7":
-            ejecutar("Dgraph", 4, "Mapa de calor geográfico")
 
-        elif opcion == "8":
-            cas.show_duplicados_global(session, limit=100)
+        # --- DGRAPH ---
+        elif opcion == "6":
+            # Reutilizamos el query de risk scoring, pidiendo un usuario
+            print("   Análisis de propagación de riesgo (Network Risk).")
+            uid_input = input("   Ingrese ID de usuario semilla (ej: 3003): ").strip()
+            if uid_input:
+                dg_qry.query_risk_scoring(client, uid_input)
+            else:
+                print("   ⚠ ID requerido.")
+
+        elif opcion == "7":
+             # Mapa de calor geográfico
+             print("   Configuración de búsqueda Geo (Default: CDMX)")
+             lat = input("   Latitud (default 19.4): ").strip() or "19.4"
+             lon = input("   Longitud (default -99.1): ").strip() or "-99.1"
+             rad = input("   Radio en KM (default 50): ").strip() or "50"
+
+             try:
+                dg_qry.query_geo_heatmap(client, float(lat), float(lon), float(rad))
+             except ValueError:
+                 print("   Error: Las coordenadas deben ser números.")
 
         elif opcion == "0":
             break
@@ -198,14 +265,25 @@ def menu_analitica_forense(session):
 # MENÚ PRINCIPAL
 # =====================================================================
 def main():
+    # 1. Conexión Dgraph
+    try:
+        client_stub = cn.create_client_stub()
+        client = cn.create_client(client_stub)
+        print("🔌 Dgraph conectado.")
+    except Exception as e:
+        print(f"❌ Error conectando a Dgraph: {e}")
+        return
+
+    # 2. Conexión Cassandra
+    cluster = None
+    session = None
     try:
         cluster, session = get_cassandra_session()
+        print("🔌 Cassandra conectado.")
     except Exception as e:
         print("⚠ No se pudo conectar a Cassandra o al keyspace.")
-        print("   Detalle:", e)
-        print("   Puedes usar la opción 4.1 (Poblar Cassandra) primero.")
-        cluster = None
-        session = None
+        print("   (Si es la primera vez, usa la opción 4 -> 1 para poblar)")
+        print(f"   Detalle: {e}")
 
     while True:
         print("\n\n############################################################")
@@ -220,58 +298,64 @@ def main():
         opcion = input("\nSeleccione operación: ").strip()
 
         if opcion == "1":
-            if session is None:
-                print("⚠ Cassandra no está disponible. Conéctate o popula primero.")
+            if session:
+                menu_investigacion_cliente(session, client)
             else:
-                menu_investigacion_cliente(session)
+                print("❌ Cassandra no disponible.")
 
         elif opcion == "2":
-            if session is None:
-                print("⚠ Cassandra no está disponible. Conéctate o popula primero.")
+            if session:
+                menu_monitor_amenazas(session, client)
             else:
-                menu_monitor_amenazas(session)
+                print("❌ Cassandra no disponible.")
 
         elif opcion == "3":
-            if session is None:
-                print("⚠ Cassandra no está disponible. Conéctate o popula primero.")
+            if session:
+                menu_analitica_forense(session, client)
             else:
-                menu_analitica_forense(session)
+                print("❌ Cassandra no disponible.")
 
         elif opcion == "4":
             print("\n[⚙️ MODO ADMINISTRADOR]")
-            print("1. Poblar Cassandra (CSV → Tablas)")
-            print("2. DROP ALL DATA (⚠️ solo simulación)")
+            print("1. Poblar Cassandra y Dgraph (Carga Inicial)")
+            print("2. DROP ALL DATA (Simulación)")
             sub_op = input(">> ").strip()
 
             if sub_op == "1":
-                print("\n🚀 Iniciando población de Cassandra...\n")
-                populate_cassandra()
-                print("\n🌱 Carga de datos finalizada.\n")
-
-                # Re-conectar
+                print("\n🚀 Iniciando población de Cassandra...")
                 try:
-                    cluster, session = get_cassandra_session()
-                    print("🔌 Conectado a Cassandra y keyspace listo.")
+                    populate_cassandra()
                 except Exception as e:
-                    print("⚠ No se pudo reconectar a Cassandra después de poblar.")
-                    print("   Detalle:", e)
-                    cluster = None
-                    session = None
+                    print(f"Error en Cassandra: {e}")
+
+                print("\n🚀 Iniciando población de Dgraph...")
+                try:
+                    populate_dgraph() # Ya tiene su propia gestión de conexión interna si usas el código anterior
+                except Exception as e:
+                    print(f"Error en Dgraph: {e}")
+
+                print("\n✅ Procesos de carga finalizados.")
+
+                # Intentar reconectar Cassandra si estaba caído
+                if session is None:
+                    try:
+                        cluster, session = get_cassandra_session()
+                        print("🔌 Conectado a Cassandra tras la carga.")
+                    except: pass
 
             elif sub_op == "2":
-                print("⚠️ (Simulación) Eliminando registros de todas las DBs...")
+                print("⚠️ (Simulación) Eliminando registros...")
                 time.sleep(1)
                 print("Sistema reseteado (simulado).")
 
         elif opcion == "0":
-            print("Cerrando conexión segura...")
+            print("Cerrando conexiones...")
+            cn.close_client_stub(client_stub)
+            if cluster:
+                cluster.shutdown()
             break
         else:
             print("Opción inválida.")
-
-    if cluster is not None:
-        cluster.shutdown()
-
 
 if __name__ == "__main__":
     main()
