@@ -59,7 +59,10 @@ def default_convert(value: str):
         return None
     return value
 
+
+# ---------------------------------------------------------
 # Creación de keyspace y tablas
+# ---------------------------------------------------------
 def create_keyspace_and_tables(session, keyspace_name: str, replication_factor: int = 1):
     """
     Crea el keyspace (si no existe) y todas las tablas definidas en model.py
@@ -81,14 +84,19 @@ def create_keyspace_and_tables(session, keyspace_name: str, replication_factor: 
     session.execute(CREATE_DUPLICATE_TRANSACTIONS_BY_USER_TABLE)
     session.execute(CREATE_TRANSACTION_STATUS_CHANGES_TABLE)
 
+
+# ---------------------------------------------------------
 # Carga genérica desde CSV
-def load_csv_into_table(session,
-                        keyspace_name: str,
-                        table_name: str,
-                        csv_path: str,
-                        columns: list,
-                        converters: dict | None = None,
-                        batch_size: int = 50):
+# ---------------------------------------------------------
+def load_csv_into_table(
+    session,
+    keyspace_name: str,
+    table_name: str,
+    csv_path: str,
+    columns: list,
+    converters: dict | None = None,
+    batch_size: int = 50,
+):
     """
     Carga un CSV en una tabla Cassandra usando BatchStatement.
 
@@ -141,8 +149,9 @@ def load_csv_into_table(session,
             session.execute(batch)
 
 
-# Carga info de las tablas
-
+# ---------------------------------------------------------
+# Carga info de todas las tablas desde CSV
+# ---------------------------------------------------------
 def load_all_data(session, keyspace_name: str, base_path: str = "data"):
     """
     Carga los datos de TODOS los CSV en sus tablas correspondientes.
@@ -155,13 +164,13 @@ def load_all_data(session, keyspace_name: str, base_path: str = "data"):
         keyspace_name,
         "transactions_by_user",
         f"{base_path}/transactions_by_user.csv",
-        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_qty", "user_qty", "tx_date"],
+        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_dty", "user_dty", "tx_date"],
         converters={
             "user_id": int,
             "tx_id": int,
             "amount": float,
-            "account_qty": int,
-            "user_qty": int,
+            # account_dty es TEXT → sin conversor
+            "user_dty": int,
             "tx_date": parse_date,
         },
     )
@@ -172,13 +181,12 @@ def load_all_data(session, keyspace_name: str, base_path: str = "data"):
         keyspace_name,
         "top_transactions_by_user",
         f"{base_path}/top_transactions_by_user.csv",
-        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_qty", "user_qty", "tx_date"],
+        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_dty", "user_dty", "tx_date"],
         converters={
             "user_id": int,
             "tx_id": int,
             "amount": float,
-            "account_qty": int,
-            "user_qty": int,
+            "user_dty": int,
             "tx_date": parse_date,
         },
     )
@@ -189,13 +197,12 @@ def load_all_data(session, keyspace_name: str, base_path: str = "data"):
         keyspace_name,
         "transfers_by_user",
         f"{base_path}/transfers_by_user.csv",
-        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_qty", "user_qty", "tx_date"],
+        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_dty", "user_dty", "tx_date"],
         converters={
             "user_id": int,
             "tx_id": int,
             "amount": float,
-            "account_qty": int,
-            "user_qty": int,
+            "user_dty": int,
             "tx_date": parse_date,
         },
     )
@@ -206,13 +213,12 @@ def load_all_data(session, keyspace_name: str, base_path: str = "data"):
         keyspace_name,
         "out_of_range_transactions",
         f"{base_path}/out_of_range_transactions.csv",
-        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_qty", "user_qty", "tx_date"],
+        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_dty", "user_dty", "tx_date"],
         converters={
             "user_id": int,
             "tx_id": int,
             "amount": float,
-            "account_qty": int,
-            "user_qty": int,
+            "user_dty": int,
             "tx_date": parse_date,
         },
     )
@@ -223,13 +229,12 @@ def load_all_data(session, keyspace_name: str, base_path: str = "data"):
         keyspace_name,
         "rejected_attempts_by_user",
         f"{base_path}/rejected_attempts_by_user.csv",
-        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_qty", "user_qty", "tx_date"],
+        ["user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_dty", "user_dty", "tx_date"],
         converters={
             "user_id": int,
             "tx_id": int,
             "amount": float,
-            "account_qty": int,
-            "user_qty": int,
+            "user_dty": int,
             "tx_date": parse_date,
         },
     )
@@ -254,13 +259,12 @@ def load_all_data(session, keyspace_name: str, base_path: str = "data"):
         keyspace_name,
         "realtime_transactions",
         f"{base_path}/realtime_transactions.csv",
-        ["tx_day", "user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_qty", "user_qty", "tx_date"],
+        ["tx_day", "user_id", "account_id", "tx_id", "amount", "type_tx", "state", "account_dty", "user_dty", "tx_date"],
         converters={
             "user_id": int,
             "tx_id": int,
             "amount": float,
-            "account_qty": int,
-            "user_qty": int,
+            "user_dty": int,
             "tx_date": parse_date,
         },
     )
