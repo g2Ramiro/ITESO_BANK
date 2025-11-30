@@ -36,6 +36,11 @@ def _load_users(db, filepath):
     
     processed_docs = []
     for doc in users_data:
+        if "user_id" in doc and doc["user_id"] is not None:
+            try:
+                doc["user_id"] = int(doc["user_id"])
+            except ValueError:
+                pass
         if "fecha_nacimiento" in doc:
             doc["fecha_nacimiento"] = parse_mongo_date(doc["fecha_nacimiento"])
         if "fecha_creacion" in doc:
@@ -112,6 +117,14 @@ def _load_transactions(db, filepath):
         
     processed_docs = []
     for doc in tx_data:
+        if "user_id" in doc:
+            try:
+                doc["user_id"] = int(doc["user_id"])
+            except ValueError: pass
+        if "transaction_id" in doc:
+            try:
+                doc["transaction_id"] = int(doc["transaction_id"])
+            except ValueError: pass
         if "timestamp" in doc:
             doc["timestamp"] = parse_mongo_date(doc["timestamp"])
             

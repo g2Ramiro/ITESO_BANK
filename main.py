@@ -7,13 +7,14 @@ from Cassandra import model as cas
 from Dgraph import querys as dg_qry
 from pymongo import MongoClient
 from Mongo.loader import populate_database as populateMongo
+from Mongo import queries as mongo_queries
 
 # =====================================================================
 # UTILERÍAS
 # =====================================================================
 
 
-
+MONGO_DB_NAME = "fraude_financiero"
 
 
 def get_cassandra_session():
@@ -42,21 +43,58 @@ def ejecutar(db_name, menu_num, descripcion, param=None):
 # =====================================================================
 # 1. INVESTIGACIÓN INDIVIDUAL
 # =====================================================================
-def menu_investigacion_cliente(session, client):
+def menu_investigacion_cliente(session, client, mongo_client):
     print("\n============== 🕵️ INVESTIGACIÓN DE OBJETIVO (CLIENTE) ==============")
-    print("Ingrese el ID o Nombre del cliente a investigar:")
-    cliente_id = input(">> ").strip()
+    print("Ingrese el ID (Ej: 3001) o Nombre (Ej: Lucia) del cliente:")
+    entrada = input(">> ").strip()
 
-    if not cliente_id:
-        print("Error: Identificador requerido para iniciar rastreo.")
+    if not entrada:
+        print("⚠️ Error: Dato requerido para iniciar rastreo.")
         return
+    
+    cliente_id = None
+    mongo_db = mongo_client[MONGO_DB_NAME]
 
-    print(f"\n--- 🎯 Objetivo Fijado: {cliente_id} ---")
+    # --- LÓGICA DE RESOLUCIÓN DE ID ---
+    if entrada.isdigit():
+        # Es un ID numérico directo
+        cliente_id = int(entrada)
+    else:
+        # Es un nombre, buscamos candidatos
+        print(f"🔎 Buscando usuarios con nombre similar a '{entrada}'...")
+        candidatos = mongo_queries.find_users_by_name(mongo_db, entrada)
+        
+        if not candidatos:
+            print("❌ No se encontraron usuarios con ese nombre.")
+            return
+        
+        if len(candidatos) == 1:
+            # Solo uno encontrado, lo seleccionamos directo
+            seleccionado = candidatos[0]
+            cliente_id = seleccionado['user_id']
+            print(f"✅ Usuario encontrado: {seleccionado['nombre_completo']} (ID: {cliente_id})")
+        else:
+            # Múltiples encontrados, pedir selección
+            print("\nmultiple coincidencias encontradas:")
+            for i, u in enumerate(candidatos):
+                print(f"   {i+1}. {u['nombre_completo']} (ID: {u['user_id']}) - {u['email']}")
+            
+            try:
+                idx = int(input("\nSeleccione el número del usuario correcto: ")) - 1
+                if 0 <= idx < len(candidatos):
+                    cliente_id = candidatos[idx]['user_id']
+                    print(f"🎯 Objetivo fijado: {candidatos[idx]['nombre_completo']}")
+                else:
+                    print("Opción inválida.")
+                    return
+            except ValueError:
+                print("Entrada inválida.")
+                return
 
     while True:
         print(f"\n[OBJETIVO: {cliente_id}] Seleccione vector de análisis:")
         print("   --- 📋 Perfil Digital y Huella ---")
-        print("   1. Perfil completo y Cuentas asociadas (Mongo #3)")
+        print("   1. Perfil completo y Cuentas asociadas (Mongo #5)")
         print("   2. Dispositivos y Huella Digital (Mongo #8)")
         print("   3. Bitácora de Accesos/Login (Mongo #2)")
 
@@ -76,11 +114,39 @@ def menu_investigacion_cliente(session, client):
 
         # --- MONGO DB (Simulados con la función ejecutar) ---
         if opcion == "1":
-            ejecutar("MongoDB", 3, "Información de Cuentas", cliente_id)
+            #Req 5 Vista 360
+            data = mongo_queries.get_user_financial_view(mongo_db, cliente_id)
+            if data:
+                print(f"\n📊 RESUMEN FINANCIERO: {data.get('nombre_completo')}")
+                print(f"   📧 Email: {data.get('email')}")
+                print(f"   💰 Saldo Total Global: ${data.get('resumen_bancario', {}).get('total_en_banco', 0):,.2f}")
+                print("   💳 Productos:")
+                for acc in data.get("detalle_cuentas", []):
+                    estado = acc['estado']
+                    icono = "✅" if estado == "activa" else "🚫"
+                    print(f"    - {icono} {acc['numero']} [{acc['tipo']}]: ${acc['saldo']:,.2f}")
+            else:
+                print("❌ Usuario no encontrado en MongoDB.")
         elif opcion == "2":
-            ejecutar("MongoDB", 8, "Dispositivos por usuario", cliente_id)
+            #Req 8 Dispositivos
+            data = mongo_queries.get_user_devices(mongo_db, cliente_id)
+            if data:
+                print(f"\n📱 HUELLA DIGITAL: {data.get('usuario')}")
+                sec = data.get('resumen_seguridad', {})
+                print(f"   Dispositivos ({sec.get('total_dispositivos_unicos')}): {sec.get('dispositivos')}")
+                print(f"   IPs Históricas: {sec.get('ips_usadas')}")
+            else:
+                print("❌ Sin datos de dispositivos.")
         elif opcion == "3":
-            ejecutar("MongoDB", 2, "Inicio de Sesión", cliente_id)
+            # Req 2: Logins
+            u = mongo_db.users.find_one({"user_id": cliente_id}, {"logins": 1})
+            if u and "logins" in u and u["logins"]:
+                print(f"\n🔐 ÚLTIMOS LOGINS ({len(u['logins'])}):")
+                # Mostrar últimos 3 logins ordenados (si el json está ordenado cronológicamente)
+                for l in u['logins'][-3:]: 
+                    print(f"   - {l.get('timestamp')} | IP: {l.get('ip')} | {l.get('device')}")
+            else:
+                print("   ℹ️ El usuario no tiene historial de logins registrado.")
         elif opcion == "8":
             ejecutar("MongoDB", 12, "Perfil de riesgo usuario", cliente_id)
 
@@ -293,12 +359,11 @@ def main():
 
     # 3. Conexion Mongo
     MONGO_URI = "mongodb://localhost:27017/"
-    DB_NAME = "fraude_financiero"
     mongo_client = None
     mongo_db = None
     try:
         mongo_client = MongoClient(MONGO_URI)
-        mongo_db = mongo_client[DB_NAME]
+        mongo_db = mongo_client[MONGO_DB_NAME]
         print("🔌 MongoDB conectado.")
     except Exception as e:
        print(f" Error Conexion Mongo: {e}")
@@ -317,10 +382,8 @@ def main():
         opcion = input("\nSeleccione operación: ").strip()
 
         if opcion == "1":
-            if session:
-                menu_investigacion_cliente(session, client)
-            else:
-                print("❌ Cassandra no disponible.")
+            menu_investigacion_cliente(session, client, mongo_client)
+    
 
         elif opcion == "2":
             if session:
@@ -379,7 +442,7 @@ def main():
                     if mongo_client:
                         try:
                             # Esto borra la base de datos completa 'fraude_financiero'
-                            mongo_client.drop_database("fraude_financiero")
+                            mongo_client.drop_database(MONGO_DB_NAME)
                             print(f"🗑️ Base de datos Mongo 'fraude_financiero' eliminada.") 
                         except Exception as e:
                             print(f"❌ Error borrando Mongo: {e}")
