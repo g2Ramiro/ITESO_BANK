@@ -1,4 +1,5 @@
 import time
+import pydgraph
 from cassandra.cluster import Cluster
 import connect as cn
 from connect import CLUSTER_IPS, KEYSPACE
@@ -39,7 +40,7 @@ def menu_investigacion_cliente(session, client, mongo_client):
     if not entrada:
         print("✖ Error: Dato requerido para iniciar rastreo.")
         return
-    
+
     cliente_id = None
     mongo_db = mongo_client[MONGO_DB_NAME]
 
@@ -51,11 +52,11 @@ def menu_investigacion_cliente(session, client, mongo_client):
         # Es un nombre, buscamos candidatos
         print(f"🔎 Buscando usuarios con nombre similar a '{entrada}'...")
         candidatos = mongo_queries.find_users_by_name(mongo_db, entrada)
-        
+
         if not candidatos:
             print("✖ No se encontraron usuarios con ese nombre.")
             return
-        
+
         if len(candidatos) == 1:
             # Solo uno encontrado, lo seleccionamos directo
             seleccionado = candidatos[0]
@@ -66,7 +67,7 @@ def menu_investigacion_cliente(session, client, mongo_client):
             print("\nmultiple coincidencias encontradas:")
             for i, u in enumerate(candidatos):
                 print(f"   {i+1}. {u['nombre_completo']} (ID: {u['user_id']}) - {u['email']}")
-            
+
             try:
                 idx = int(input("\nSeleccione el número del usuario correcto: ")) - 1
                 if 0 <= idx < len(candidatos):
@@ -132,27 +133,27 @@ def menu_investigacion_cliente(session, client, mongo_client):
             if u and "logins" in u and u["logins"]:
                 print(f"\n ÚLTIMOS LOGINS ({len(u['logins'])}):")
                 # Mostrar últimos 3 logins ordenados
-                for l in u['logins'][-3:]: 
+                for l in u['logins'][-3:]:
                     print(f"   - {l.get('timestamp')} | IP: {l.get('ip')} | {l.get('device')}")
             else:
                 print("   ℹ El usuario no tiene historial de logins registrado.")
         elif opcion == "8":
             #  calcular Risk Score del sujeto (Mongo #12)"
             print(f"\n⧗ Calculando perfil de riesgo para el usuario {cliente_id}...")
-            
+
             # Llamada a la función real de queries.py
             risk = mongo_queries.calculate_risk_score(mongo_db, cliente_id)
-            
+
             if risk:
                 # Determinamos íconos visuales
                 nivel = risk['risk_level']
                 icono = "🔴" if "CRITICO" in nivel else ("🟠" if "ALTO" in nivel else "🟢")
-                
+
                 print(f"\n{icono} REPORTE DE RIESGO: Usuario {cliente_id}")
                 print(f"   📊 Score: {risk['risk_score']}/100")
                 print(f"   🛡️  Nivel: {nivel}")
                 print("   🔍 Factores de Riesgo:")
-                
+
                 if not risk['factors']:
                     print("      - ✔ Usuario limpio (Sin factores detectados).")
                 else:
@@ -165,27 +166,27 @@ def menu_investigacion_cliente(session, client, mongo_client):
         elif opcion == "9":
             # Mapa de conexiones sospechosas (Dgraph #6)
             print(f"\n⧗ Consultando grafo de riesgo para: {cliente_id}...")
-            
+
             try:
                 # 1. Obtenemos datos PUROS (El diccionario que retorna la función)
                 user_node = dg_qry.query_risk_scoring(client, str(cliente_id))
-                
+
                 # 2. Formateamos en el MAIN
                 if user_node:
                     nombre = user_node.get('name', 'Desconocido')
                     print(f"\n--- 🕸️ MAPA DE CONEXIONES: {nombre} (ID: {cliente_id}) ---")
-                    
+
                     devices = user_node.get('uses_device', [])
-                    
+
                     if not devices:
                         print("ℹ  Este usuario no tiene dispositivos registrados en el grafo.")
-                    
+
                     for dev in devices:
                         # Datos del dispositivo
                         dev_id = dev.get('device_id', 'N/A')
                         loc = dev.get('device_location', 'Ubicación desconocida')
                         print(f"\n📱 Dispositivo: {dev_id} [{loc}]")
-                        
+
                         # A) Análisis de IPs (Anidado dentro del dispositivo)
                         ips = dev.get('has_ip', [])
                         if ips:
@@ -208,7 +209,7 @@ def menu_investigacion_cliente(session, client, mongo_client):
                             print("   ✔ Dispositivo de uso exclusivo.")
 
                 else:
-                    print("✖ Usuario no encontrado en Dgraph (Verifica que el ID esté sincronizado).")
+                    print("✖ Usuario no encontrado (Verifica que el ID esté sincronizado).")
 
             except Exception as e:
                 print(f"✖ Error técnico en Dgraph: {e}")
@@ -222,18 +223,24 @@ def menu_investigacion_cliente(session, client, mongo_client):
                 continue
 
             if opcion == "4":
-                #Historial de movimientos (Cassandra #1)"
-                cas.show_historial_transaccional(session, uid, limit=100)
-            elif opcion == "5":
-                # Flujo de dinero entrante (Cassandra #10
-                cas.show_transacciones_recibidas(session, uid, limit=50)
-            elif opcion == "6":
-                # Transferencias internas (Posible Pitufeo) (Cassandra #4)
-                cas.show_transferencias_usuario(session, uid)
-            elif opcion == "7":
-                # Estado de transacciones en curso (Cassandra #12)
-                cas.show_cambios_estado_usuario(session, uid)
+                # Historial de movimientos (Cassandra #1)
+                print("   --- Configuración de consulta ---")
+                lim_input = input("   Ingrese límite de registros a mostrar: ").strip()
+                limit = int(lim_input) if lim_input.isdigit() else 100
+                cas.show_historial_transaccional(session, uid, limit=limit)
 
+            elif opcion == "5":
+                # Flujo de dinero entrante (Cassandra #10)
+                print("   --- Configuración de consulta ---")
+                lim_input = input("   Ingrese límite de registros a mostrar: ").strip()
+                limit = int(lim_input) if lim_input.isdigit() else 50
+                cas.show_transacciones_recibidas(session, uid, limit=limit)
+
+            elif opcion == "6":
+                cas.show_transferencias_usuario(session, uid)
+
+            elif opcion == "7":
+                cas.show_cambios_estado_usuario(session, uid)
         elif opcion == "0":
             break
         else:
@@ -252,11 +259,11 @@ def menu_monitor_amenazas(session, client, mongo_client):
         print("   3. Alerta masiva: Cambios IP/Dispositivo ")
 
         print("\n   --- 🕸️  Detección de Patrones Complejos (Graph) ---")
-        print("\n   4. Anillos de Colaboración Fraudulenta (Dgraph #1)")
-        print("   5. Tipologías de Lavado de Dinero (Dgraph #3)")
-        print("   6. Cuentas Fantasma / Synthetic ID (Dgraph #7)")
-        print("   7. Suplantación de Identidad (Account Takeover) (Dgraph #8)")
-        print("   8. Rastreo de rutas de dinero ilícito (Dgraph #9)")
+        print("\n   4. Anillos de Colaboración Fraudulenta  ")
+        print("   5. Tipologías de Lavado de Dinero     ")
+        print("   6. Cuentas Fantasma / Synthetic ID    ")
+        print("   7. Suplantación de Identidad (Account Takeover)   ")
+        print("   8. Rastreo de rutas de dinero ilícito     ")
 
         print("\n   --- 🚩 Watchlists y Anomalías ---")
         print("\n   9. Usuarios en Lista Negra / Flageados ")
@@ -303,7 +310,7 @@ def menu_monitor_amenazas(session, client, mongo_client):
                 # Mostramos ID de cuenta y Número
                 print(f"   - 🆔 ID: {acc['account_id']} | 💳 Cuenta: {acc['cuenta']}")
                 print(f"     🔄 Total Cambios: {acc['total_cambios']}")
-                
+
                 # Mostrar último cambio registrado
                 if acc['historial_cambios']:
                     last = acc['historial_cambios'][-1]
@@ -362,8 +369,8 @@ def menu_analitica_forense(session, client, mongo_client):
         print("   2. Usuarios con mayor frecuencia transaccional ")
         print("   3. Operaciones de mayor cuantía histórica ")
         print("   4. Auditoría de cuentas nuevas (Alto Riesgo) ")
-        print("   5. Análisis de propagación de riesgo (Dgraph #10)")
-        print("   6. Mapa de calor geográfico (Dgraph #4)")
+        print("   5. Análisis de propagación de riesgo  ")
+        print("   6. Mapa de calor geográfico   ")
         print("   7. Auditoría de duplicados ")
 
         print("\n   0. 🔙 Regresar al menú principal")
@@ -396,11 +403,11 @@ def menu_analitica_forense(session, client, mongo_client):
         elif opcion == "4":
             # REQ 10: Auditoría Cuentas Nuevas Alto Riesgo
             print("\n--- 👶💸 AUDITORÍA: CUENTAS NUEVAS DE ALTO VALOR ---")
-            
+
             # 1. Definimos los parámetros
             dias_filtro = 1000
             monto_filtro = 10000  # Bajamos a 1,000 para detectar tus ejemplos de $3,950
-            
+
             # 2. Imprimimos qué estamos buscando
             print(f"   🔎 Criterio: Cuentas creadas hace menos de {dias_filtro} días")
             print(f"   🔎 Umbral: Transacciones mayores a ${monto_filtro:,.2f}")
@@ -408,24 +415,24 @@ def menu_analitica_forense(session, client, mongo_client):
 
             # 3. Ejecutamos la consulta con esas variables
             resultados = mongo_queries.get_high_risk_new_accounts(
-                mongo_db, 
-                days_threshold=dias_filtro, 
+                mongo_db,
+                days_threshold=dias_filtro,
                 amount_threshold=monto_filtro
             )
-            
+
             if resultados:
                 print(f"\n   ⚠ Se detectaron {len(resultados)} cuentas de riesgo:\n")
                 print(f"   {'CUENTA':<15} | {'CREADA':<12} | {'SALDO ACTUAL':<15} | {'Transacciones'}")
                 print("   " + "-"*60)
-                
+
                 for r in resultados:
                     # Formateo seguro de fecha
                     fecha = r['fecha_apertura'].strftime("%Y-%m-%d") if r.get('fecha_apertura') else "N/A"
                     saldo = f"${r['saldo_actual']:,.2f}"
                     txs = r['alerta']['total_txs_grandes']
-                    
+
                     print(f"   {r['cuenta_riesgo']:<15} | {fecha:<12} | {saldo:<15} | {txs} operaciones")
-                    
+
                     # Detalle de transacciones
                     for tx in r['alerta']['detalle_txs']:
                         print(f"      ↳ Transaction_id: {tx['tx_id']}: ${tx['monto']:,.2f} -> {tx['destino']}")
@@ -434,9 +441,8 @@ def menu_analitica_forense(session, client, mongo_client):
 
         # DGraph
         elif opcion == "5":
-            # Reutilizamos el query de risk scoring, pidiendo un usuario
             print("   Análisis de propagación de riesgo (Network Risk).")
-            uid_input = input("   Ingrese ID de usuario semilla (ej: 3003): ").strip()
+            uid_input = input("   Ingrese ID de usuario semilla: ").strip()
             if uid_input:
                 dg_qry.query_risk_scoring(client, uid_input)
             else:
@@ -444,10 +450,10 @@ def menu_analitica_forense(session, client, mongo_client):
 
         elif opcion == "6":
              # Mapa de calor geográfico
-             print("   Configuración de búsqueda Geo (Default: CDMX)")
-             lat = input("   Latitud (default 19.4): ").strip() or "19.4"
-             lon = input("   Longitud (default -99.1): ").strip() or "-99.1"
-             rad = input("   Radio en KM (default 50): ").strip() or "50"
+             print("   Configuración de búsqueda Geo    ")
+             lat = input("   Latitud: ").strip() or "19.4"
+             lon = input("   Longitud: ").strip() or "-99.1"
+             rad = input("   Radio en KM: ").strip() or "50"
 
              try:
                 dg_qry.query_geo_heatmap(client, float(lat), float(lon), float(rad))
@@ -508,7 +514,7 @@ def main():
 
         if opcion == "1":
             menu_investigacion_cliente(session, client, mongo_client)
-    
+
 
         elif opcion == "2":
             if session:
@@ -535,14 +541,14 @@ def main():
                     populate_cassandra()
                 except Exception as e:
                     print(f"Error en Cassandra: {e}")
-                
+
                 print("\n🚀 Iniciando población de Mongo...")
                 try:
                     populateMongo(mongo_db,"data/mongo")
                 except Exception as e:
                     print(f"Error en Mongo {e}")
 
-                
+
                 print("\n🚀 Iniciando población de Dgraph...")
                 try:
                     populate_dgraph() # Ya tiene su propia gestión de conexión interna si usas el código anterior
@@ -569,27 +575,36 @@ def main():
                         try:
                             # Esto borra la base de datos completa 'fraude_financiero'
                             mongo_client.drop_database(MONGO_DB_NAME)
-                            print(f"Base de datos Mongo 'fraude_financiero' eliminada.") 
+                            print(f"Base de datos Mongo 'fraude_financiero' eliminada.")
                         except Exception as e:
                             print(f"✖ Error borrando Mongo: {e}")
                     else:
                         print("⚠️ No hay conexión a Mongo para borrar.")
-
-                    # if cas_session:
-                    #     try:
-                    #         # Aquí tendrías que hacer TRUNCATE a tus tablas
-                    #         tablas = ["transactions_by_user", "accounts_by_transactions", "realtime_transactions"] # etc...
-                    #         for t in tablas:
-                    #             cas_session.execute(f"TRUNCATE {KEYSPACE}.{t};")
-                    #         print("🗑️ Tablas de Cassandra truncadas.")
-                    #     except Exception as e:
-                    #         print(f"❌ Error borrando Cassandra: {e}")
-
-                    # --- BORRADO DGRAPH (Opcional) ---
-                    # if dg_client:
-                    #     op = cn.api.Operation(drop_all=True)
-                    #     dg_client.alter(op)
-                    #     print("🗑️ Dgraph reseteado (Drop All).")
+                    if session:
+                        try:
+                            filas = session.execute(
+                                f"SELECT table_name FROM system_schema.tables WHERE keyspace_name = '{KEYSPACE}'"
+                            )
+                            tablas = [row.table_name for row in filas]
+                            if tablas:
+                                for t in tablas:
+                                    session.execute(f"TRUNCATE {KEYSPACE}.{t};")
+                                print(f"🗑️ Tablas de Cassandra en keyspace '{KEYSPACE}' truncadas.")
+                            else:
+                                print(f"ℹ No se encontraron tablas en el keyspace '{KEYSPACE}'.")
+                        except Exception as e:
+                            print(f"❌ Error borrando datos de Cassandra: {e}")
+                    else:
+                        print("⚠️ No hay sesión activa de Cassandra para borrar datos.")
+                    if client:
+                        try:
+                            op = pydgraph.Operation(drop_all=True)
+                            client.alter(op)
+                            print("🗑️ Dgraph reseteado (Drop All).")
+                        except Exception as e:
+                            print(f"❌ Error reseteando Dgraph: {e}")
+                    else:
+                        print("⚠️ No hay cliente Dgraph para ejecutar Drop All.")
 
                     print("\n✅ Sistema reseteado correctamente.")
                 else:
