@@ -211,7 +211,13 @@ def query_risk_scoring(client, user_id):
     txn = client.txn(read_only=True)
     try:
         res = txn.query(query, variables=variables)
-        print(json.dumps(json.loads(res.json), indent=2, ensure_ascii=False))
+        data = json.loads(res.json)
+        nodes = data.get('risk_analysis', [])
+        
+        if not nodes:
+            return None
+            
+        return nodes[0]
     finally:
         txn.discard()
 

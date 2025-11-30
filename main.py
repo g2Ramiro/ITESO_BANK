@@ -5,6 +5,7 @@ from connect import CLUSTER_IPS, KEYSPACE
 from populate import populate_cassandra, populate_dgraph
 from Cassandra import model as cas
 from Dgraph import querys as dg_qry
+#Imports mongo
 from pymongo import MongoClient
 from Mongo.loader import populate_database as populateMongo
 from Mongo import queries as mongo_queries
@@ -40,9 +41,7 @@ def ejecutar(db_name, menu_num, descripcion, param=None):
     print("   ✅ Resultado simulado: Operación registrada/consultada con éxito.")
     time.sleep(0.5)
 
-# =====================================================================
-# 1. INVESTIGACIÓN INDIVIDUAL
-# =====================================================================
+# INVESTIGACION POR CLIENTE
 def menu_investigacion_cliente(session, client, mongo_client):
     print("\n============== 🕵️ INVESTIGACIÓN DE OBJETIVO (CLIENTE) ==============")
     print("Ingrese el ID (Ej: 3001) o Nombre (Ej: Lucia) del cliente:")
@@ -112,9 +111,9 @@ def menu_investigacion_cliente(session, client, mongo_client):
 
         opcion = input("   >> ").strip()
 
-        # --- MONGO DB (Simulados con la función ejecutar) ---
+        # Opciones del menu cliente
         if opcion == "1":
-            #Req 5 Vista 360
+            #Perfil completo y Cuentas asociadas (Mongo #5)
             data = mongo_queries.get_user_financial_view(mongo_db, cliente_id)
             if data:
                 print(f"\n📊 RESUMEN FINANCIERO: {data.get('nombre_completo')}")
@@ -128,7 +127,7 @@ def menu_investigacion_cliente(session, client, mongo_client):
             else:
                 print("❌ Usuario no encontrado en MongoDB.")
         elif opcion == "2":
-            #Req 8 Dispositivos
+            #Dispositivos y Huella Digital (Mongo #8)
             data = mongo_queries.get_user_devices(mongo_db, cliente_id)
             if data:
                 print(f"\n📱 HUELLA DIGITAL: {data.get('usuario')}")
@@ -138,25 +137,92 @@ def menu_investigacion_cliente(session, client, mongo_client):
             else:
                 print("❌ Sin datos de dispositivos.")
         elif opcion == "3":
-            # Req 2: Logins
+            # Accesos/Login (Mongo #2)"
             u = mongo_db.users.find_one({"user_id": cliente_id}, {"logins": 1})
             if u and "logins" in u and u["logins"]:
                 print(f"\n🔐 ÚLTIMOS LOGINS ({len(u['logins'])}):")
-                # Mostrar últimos 3 logins ordenados (si el json está ordenado cronológicamente)
+                # Mostrar últimos 3 logins ordenados
                 for l in u['logins'][-3:]: 
                     print(f"   - {l.get('timestamp')} | IP: {l.get('ip')} | {l.get('device')}")
             else:
                 print("   ℹ️ El usuario no tiene historial de logins registrado.")
         elif opcion == "8":
-            ejecutar("MongoDB", 12, "Perfil de riesgo usuario", cliente_id)
+            #  calcular Risk Score del sujeto (Mongo #12)"
+            print(f"\n⏳ Calculando perfil de riesgo para el usuario {cliente_id}...")
+            
+            # Llamada a la función real de queries.py
+            risk = mongo_queries.calculate_risk_score(mongo_db, cliente_id)
+            
+            if risk:
+                # Determinamos íconos visuales
+                nivel = risk['risk_level']
+                icono = "🔴" if "CRITICO" in nivel else ("🟠" if "ALTO" in nivel else "🟢")
+                
+                print(f"\n{icono} REPORTE DE RIESGO: Usuario {cliente_id}")
+                print(f"   📊 Score: {risk['risk_score']}/100")
+                print(f"   🛡️  Nivel: {nivel}")
+                print("   🔍 Factores de Riesgo:")
+                
+                if not risk['factors']:
+                    print("      - ✅ Usuario limpio (Sin factores detectados).")
+                else:
+                    for factor in risk['factors']:
+                        print(f"      - ⚠️  {factor}")
+            else:
+                print("❌ No se pudo calcular el riesgo (¿El usuario existe en MongoDB?).")
 
-        # --- DGRAPH ---
         elif opcion == "9":
-            print(f"Analizando conexiones de riesgo para el usuario {cliente_id}...")
-            # Llamada al script queries.py
-            dg_qry.query_risk_scoring(client, cliente_id)
+            # Mapa de conexiones sospechosas (Dgraph #6)
+            print(f"\n⏳ Consultando grafo de riesgo para: {cliente_id}...")
+            
+            try:
+                # 1. Obtenemos datos PUROS (El diccionario que retorna la función)
+                user_node = dg_qry.query_risk_scoring(client, str(cliente_id))
+                
+                # 2. Formateamos en el MAIN
+                if user_node:
+                    nombre = user_node.get('name', 'Desconocido')
+                    print(f"\n--- 🕸️ MAPA DE CONEXIONES: {nombre} (ID: {cliente_id}) ---")
+                    
+                    devices = user_node.get('uses_device', [])
+                    
+                    if not devices:
+                        print("ℹ️  Este usuario no tiene dispositivos registrados en el grafo.")
+                    
+                    for dev in devices:
+                        # Datos del dispositivo
+                        dev_id = dev.get('device_id', 'N/A')
+                        loc = dev.get('device_location', 'Ubicación desconocida')
+                        print(f"\n📱 Dispositivo: {dev_id} [{loc}]")
+                        
+                        # A) Análisis de IPs (Anidado dentro del dispositivo)
+                        ips = dev.get('has_ip', [])
+                        if ips:
+                            for ip in ips:
+                                ip_addr = ip.get('ip_addr')
+                                rep = ip.get('reputation', 0)
+                                # Icono según reputación
+                                icon_ip = "🔴" if rep > 50 else ("🟠" if rep > 20 else "🟢")
+                                print(f"   └── 🌐 IP: {ip_addr} {icon_ip} (Rep: {rep})")
+                        else:
+                            print("   └── ⚠️ Sin historial de IPs.")
 
-        # --- CASSANDRA ---
+                        # B) Análisis de Colusión (Usuarios compartidos)
+                        otros = dev.get('used_by_others', [])
+                        if otros:
+                            print(f"   🚨 ALERTA: Dispositivo COMPARTIDO con {len(otros)} usuarios:")
+                            for u in otros:
+                                print(f"      - 👤 {u.get('name')} (ID: {u.get('user_id')})")
+                        else:
+                            print("   ✅ Dispositivo de uso exclusivo.")
+
+                else:
+                    print("❌ Usuario no encontrado en Dgraph (Verifica que el ID esté sincronizado).")
+
+            except Exception as e:
+                print(f"❌ Error técnico en Dgraph: {e}")
+
+        # Queries Cassandra
         elif opcion in {"4", "5", "6", "7"}:
             try:
                 uid = int(cliente_id)
@@ -165,12 +231,16 @@ def menu_investigacion_cliente(session, client, mongo_client):
                 continue
 
             if opcion == "4":
+                #Historial de movimientos (Cassandra #1)"
                 cas.show_historial_transaccional(session, uid, limit=100)
             elif opcion == "5":
+                # Flujo de dinero entrante (Cassandra #10
                 cas.show_transacciones_recibidas(session, uid, limit=50)
             elif opcion == "6":
+                # Transferencias internas (Posible Pitufeo) (Cassandra #4)
                 cas.show_transferencias_usuario(session, uid)
             elif opcion == "7":
+                # Estado de transacciones en curso (Cassandra #12)
                 cas.show_cambios_estado_usuario(session, uid)
 
         elif opcion == "0":
@@ -474,7 +544,7 @@ def main():
             cn.close_client_stub(client_stub)
             if mongo_client:
                 mongo_client.close()
-                print("Mongo desconectado correctamente.")
+                #print("Mongo desconectado correctamente.")
             if cluster:
                 cluster.shutdown()
             break
