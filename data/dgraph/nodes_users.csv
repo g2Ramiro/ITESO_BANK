@@ -1,7 +1,7 @@
 user_id,name,email,phone,address_hash,risk_score,is_flagged,dgraph.type
-3001,User_3001,user3001@bank.com,+52-55-3001-0000,ADDR_HASH_3001,10,false,User
-3002,User_3002,user3002@bank.com,+52-55-3002-0000,ADDR_HASH_3002,10,false,User
-3003,User_3003,user3003@bank.com,+52-55-3003-0000,ADDR_HASH_3003,90,true,User
-3004,User_3004,user3004@bank.com,+52-55-3004-0000,ADDR_HASH_3004,90,true,User
-3005,User_3005,user3005@bank.com,+52-55-3005-0000,ADDR_HASH_3005,10,false,User
-3006,User_3006,user3006@bank.com,+52-55-3006-0000,ADDR_HASH_3006,10,false,User
+3001,Lucía Ramírez,lucia.ramirez@example.com,+52-55-3001-0000,ADDR_HASH_3001,10,false,User
+3002,Diego Figueroa,diego.figueroa@example.com,+52-55-3002-0000,ADDR_HASH_3002,10,false,User
+3003,Elena S.,elena.s_crypto@protonmail.com,+52-55-3003-0000,ADDR_HASH_3003,85,true,User
+3004,Ivan Kuznetimestampov,ivan.kuznetimestampov99@protonmail.com,+52-55-3004-0000,ADDR_HASH_3004,95,true,User
+3005,Cuenta Fantasma 01,ghost.user01@tempmail.com,+52-55-3005-0000,ADDR_HASH_3005,75,true,User
+3006,Usuario Nuevo,new.user2024@gmail.com,+52-55-3006-0000,ADDR_HASH_3006,10,false,User
