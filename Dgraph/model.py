@@ -7,47 +7,49 @@ import pydgraph
 #Funcion para cargar schema a dgraph
 def create_schema(client):
     schema = """
-    # 1. Identificadores e Índices
+    # --- 1. Identificadores
     user_id: string @index(hash) .
     account_id: string @index(hash) .
     device_id: string @index(hash) .
-    ip_addr: string @index(hash) .
-    document_id: string @index(hash) .
-    tx_id: string @index(hash) .
+    ip_addr: string .  
+    tx_id: string .
+    document_id: string .
 
-    # 2. Datos Numéricos y Fechas
-    risk_score: float @index(float) .
+    # --- 2. Datos Numéricos
     balance: float @index(float) .
     amount: float @index(float) .
-    tx_ts: datetime @index(hour) .
-    ip_reputation: int @index(int) .
+    risk_score: float .
+    tx_ts: datetime .
+    ip_reputation: int .
 
-    # 3. Datos Geográficos
-    device_location: geo @index(geo) .
+    # --- 3. Datos Geográficos
     associated_location: geo @index(geo) .
-    ip_location: geo @index(geo) .
+    device_location: geo .
+    ip_location: geo .
 
-    # 4. Flags y Textos
-    name: string @index(term) .
-    is_flagged: bool @index(bool) .
+    # --- 4. Textos y Flags
+    name: string .
+    is_flagged: bool .
     email: string .
     phone: string .
     tx_type: string .
     doc_type: string .
-    address_hash: string @index(hash) .
+    address_hash: string .
 
-    # 6. Relaciones (edges)
-    owns_account: [uid] @reverse .
-    has_document: [uid] @reverse .
-    uses_device: [uid] @reverse .
-    known_ips: [uid] @reverse .
-    has_ip: [uid] @reverse .
-    from_account: [uid] @reverse .
-    to_account: [uid] @reverse .
-    used_device: [uid] @reverse .
-    used_ip: [uid] @reverse .
+    # --- 5. Relaciones 
 
-    # 5. Definición de Tipos
+    owns_account: [uid] @reverse .   # Usado en Lavado de Dinero (Transaction -> Account -> User)
+    has_document: [uid] @reverse .   # Usado en Suplantación (Document -> User)
+    uses_device: [uid] @reverse .    # Usado en Anillos de Fraude (Device -> User)
+    from_account: [uid] @reverse .   # Usado en Cuentas Fantasma y Trace Flow
+    to_account: [uid] @reverse .     # Usado en Cuentas Fantasma y Trace Flow
+    
+    known_ips: [uid] .
+    has_ip: [uid] .
+    used_device: [uid] .
+    used_ip: [uid] .
+
+    # --- 6. Definición de Tipos
     type User {
         user_id
         name
@@ -98,7 +100,9 @@ def create_schema(client):
         doc_type
     }
     """
-    client.alter(pydgraph.Operation(schema=schema))
+    op = pydgraph.Operation(schema=schema)
+    client.alter(op)
+    print("✅ Schema OPTIMIZADO aplicado correctamente.")
 
 
 # Detecta la ruta donde está este archivo (Dgraph/model.py)
