@@ -1,6 +1,10 @@
 ip_addr,ip_reputation,dgraph.type
-10.0.0.3001,10,IpAddress
-10.0.0.3002,10,IpAddress
-192.168.66.6,99,IpAddress
-10.0.0.3005,10,IpAddress
-10.0.0.3006,10,IpAddress
+187.210.120.33,0,IpAddress
+187.210.122.50,0,IpAddress
+189.140.88.22,0,IpAddress
+189.200.10.10,0,IpAddress
+193.56.28.22,90,IpAddress
+172.98.200.44,85,IpAddress
+201.55.33.11,60,IpAddress
+88.102.55.33,95,IpAddress
+10.20.30.40,0,IpAddress
