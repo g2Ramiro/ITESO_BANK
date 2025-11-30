@@ -207,7 +207,7 @@ def query_risk_scoring(client, user_id):
     }"""
     variables = {'$uid': str(user_id)}
 
-    print(f"\n--- ⚠️ Query: Análisis de Riesgo Contextual para User {user_id} ---")
+    #print(f"\n--- ⚠️ Query: Análisis de Riesgo Contextual para User {user_id} ---")
     txn = client.txn(read_only=True)
     try:
         res = txn.query(query, variables=variables)
