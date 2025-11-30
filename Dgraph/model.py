@@ -356,8 +356,6 @@ def load_data(client):
     load_simple_edges(client, FILES['rel_ip'], uids_users, uids_ips, 'user_id', 'ip_addr', 'known_ips')
     load_simple_edges(client, FILES['rel_doc'], uids_users, uids_docs, 'user_id', 'document_id', 'has_document')
     load_simple_edges(client, FILES['rel_dev_ip'], uids_devices, uids_ips, 'device_id', 'ip_addr', 'has_ip')
-
-    # 3. LOAD COMPLEX FLOWS
     load_tx_flows(client, FILES['rel_tx'], uids_txs, uids_accounts, uids_devices, uids_ips)
 
     print("\n🎉 CARGA COMPLETADA EXITOSAMENTE.")
