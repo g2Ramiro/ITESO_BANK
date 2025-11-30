@@ -12,7 +12,7 @@ CREATE_KEYSPACE = """
         WITH replication = {{ 'class': 'SimpleStrategy', 'replication_factor': {} }}
 """
 
-#Requerimiento 1
+# Requerimiento 1
 CREATE_TRANSACTIONS_BY_USER_TABLE = """
     CREATE TABLE IF NOT EXISTS transactions_by_user (
         user_id INT,
@@ -21,13 +21,14 @@ CREATE_TRANSACTIONS_BY_USER_TABLE = """
         amount DECIMAL,
         type_tx TEXT,
         state TEXT,
-        account_qty INT,
-        user_qty INT,
+        account_dty TEXT,
+        user_dty INT,
         tx_date DATE,
         PRIMARY KEY ((user_id), tx_date, account_id)
     ) WITH CLUSTERING ORDER BY (tx_date DESC, account_id ASC)
 """
-#Requerimiento 2:
+
+# Requerimiento 2
 CREATE_TOP_TRANSACTIONS_BY_USER_TABLE = """
     CREATE TABLE IF NOT EXISTS top_transactions_by_user (
         user_id INT,
@@ -36,13 +37,14 @@ CREATE_TOP_TRANSACTIONS_BY_USER_TABLE = """
         amount DECIMAL,
         type_tx TEXT,
         state TEXT,
-        account_qty INT,
-        user_qty INT,
+        account_dty TEXT,
+        user_dty INT,
         tx_date DATE,
         PRIMARY KEY ((user_id), tx_date, amount)
     ) WITH CLUSTERING ORDER BY (tx_date ASC, amount DESC)
 """
-#Requerimiento 4:
+
+# Requerimiento 4
 CREATE_TRANSFERS_BY_USER_TABLE = """
     CREATE TABLE IF NOT EXISTS transfers_by_user (
         user_id INT,
@@ -51,13 +53,14 @@ CREATE_TRANSFERS_BY_USER_TABLE = """
         amount DECIMAL,
         type_tx TEXT,
         state TEXT,
-        account_qty INT,
-        user_qty INT,
+        account_dty TEXT,
+        user_dty INT,
         tx_date DATE,
-        PRIMARY KEY ((user_id), user_qty)
-    ) WITH CLUSTERING ORDER BY (user_qty ASC)
+        PRIMARY KEY ((user_id), user_dty)
+    ) WITH CLUSTERING ORDER BY (user_dty ASC)
 """
-#Requerimiento 8
+
+# Requerimiento 8
 CREATE_OUT_OF_RANGE_TRANSACTIONS_TABLE = """
     CREATE TABLE IF NOT EXISTS out_of_range_transactions (
         user_id INT,
@@ -66,13 +69,14 @@ CREATE_OUT_OF_RANGE_TRANSACTIONS_TABLE = """
         amount DECIMAL,
         type_tx TEXT,
         state TEXT,
-        account_qty INT,
-        user_qty INT,
+        account_dty TEXT,
+        user_dty INT,
         tx_date DATE,
         PRIMARY KEY ((user_id), tx_date, amount, tx_id)
     ) WITH CLUSTERING ORDER BY (tx_date ASC, amount DESC, tx_id DESC)
 """
-#Requerimiento 9:
+
+# Requerimiento 9
 CREATE_REJECTED_ATTEMPTS_BY_USER_TABLE = """
     CREATE TABLE IF NOT EXISTS rejected_attempts_by_user (
         user_id INT,
@@ -81,23 +85,14 @@ CREATE_REJECTED_ATTEMPTS_BY_USER_TABLE = """
         amount DECIMAL,
         type_tx TEXT,
         state TEXT,
-        account_qty INT,
-        user_qty INT,
+        account_dty TEXT,
+        user_dty INT,
         tx_date DATE,
         PRIMARY KEY ((user_id), state, tx_date)
     ) WITH CLUSTERING ORDER BY (state ASC, tx_date ASC)
 """
-#Requerimiento 3:
-CREATE_ACCOUNTS_BY_TRANSACTIONS_TABLE = """
-    CREATE TABLE IF NOT EXISTS accounts_by_transactions (
-        user_id INT,
-        account_id TEXT,
-        total_transacciones INT,
-        account_balance DECIMAL,
-        PRIMARY KEY ((user_id), total_transacciones)
-    ) WITH CLUSTERING ORDER BY (total_transacciones DESC)
-"""
-#Requerimiento 6:
+
+# Requerimiento 6
 CREATE_REALTIME_TRANSACTIONS_TABLE = """
     CREATE TABLE IF NOT EXISTS realtime_transactions (
         tx_day TEXT,
@@ -107,11 +102,22 @@ CREATE_REALTIME_TRANSACTIONS_TABLE = """
         amount DECIMAL,
         type_tx TEXT,
         state TEXT,
-        account_qty INT,
-        user_qty INT,
+        account_dty TEXT,
+        user_dty INT,
         tx_date DATE,
         PRIMARY KEY ((tx_day), tx_id)
     ) WITH CLUSTERING ORDER BY (tx_id DESC)
+"""
+
+#Requerimiento 3:
+CREATE_ACCOUNTS_BY_TRANSACTIONS_TABLE = """
+    CREATE TABLE IF NOT EXISTS accounts_by_transactions (
+        user_id INT,
+        account_id TEXT,
+        total_transacciones INT,
+        account_balance DECIMAL,
+        PRIMARY KEY ((user_id), total_transacciones)
+    ) WITH CLUSTERING ORDER BY (total_transacciones DESC)
 """
 
 #Requerimiento 7
@@ -144,6 +150,7 @@ CREATE_RECEIVED_TRANSACTIONS_BY_USER_TABLE = """
         PRIMARY KEY ((user_id), date, amount)
     ) WITH CLUSTERING ORDER BY (date DESC, amount ASC)
 """
+
 #Requerimiento 11:
 CREATE_DUPLICATE_TRANSACTIONS_BY_USER_TABLE = """
     CREATE TABLE IF NOT EXISTS duplicate_transactions_by_user (
@@ -158,6 +165,7 @@ CREATE_DUPLICATE_TRANSACTIONS_BY_USER_TABLE = """
         PRIMARY KEY ((user_id), sender_acc_id, tx_id)
     ) WITH CLUSTERING ORDER BY (sender_acc_id ASC, tx_id ASC)
 """
+
 #Requerimiento 12:
 CREATE_TRANSACTION_STATUS_CHANGES_TABLE = """
     CREATE TABLE IF NOT EXISTS transaction_status_changes (
@@ -171,6 +179,7 @@ CREATE_TRANSACTION_STATUS_CHANGES_TABLE = """
         PRIMARY KEY ((trs_id), change_date)
     ) WITH CLUSTERING ORDER BY (change_date ASC)
 """
+
 # ==========================
 # QUERIES - REQUERIMIENTOS CASSANDRA
 # ==========================
@@ -182,7 +191,7 @@ def q_historial_transaccional(session, user_id: int, limit: int = 100):
     Se usa en: menú investigación -> opción 4.
     """
     cql = f"""
-    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_qty, user_qty, tx_date
+    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM transactions_by_user
     WHERE user_id = %s
     ORDER BY tx_date DESC, account_id ASC
@@ -198,12 +207,12 @@ def q_top_operaciones_por_usuario(session, user_id: int, limit: int = 20):
     Se usa en: analítica forense -> opción 3.
     """
     cql = f"""
-    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_qty, user_qty, tx_date
+    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM top_transactions_by_user
     WHERE user_id = %s
     LIMIT {limit};
     """
-    # El ORDER BY real de amount se hace a nivel de partición, ya definido en la tabla.
+
     return session.execute(cql, (user_id,))
 
 
@@ -245,15 +254,12 @@ def q_transferencias_por_usuario(session, user_id: int):
     Se usa en: investigación -> opción 6 (posible pitufeo).
     """
     cql = """
-    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_qty, user_qty, tx_date
+    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM transfers_by_user
     WHERE user_id = %s
-    ORDER BY user_qty ASC;
+    ORDER BY user_dty ASC;
     """
     return session.execute(cql, (user_id,))
-
-
-# 5) (Analítica de volumen ya la cubrimos con q_top_cuentas_global / q_cuentas_por_usuario)
 
 
 # 6) Transacciones en tiempo real / por día (Cassandra #6)
@@ -264,7 +270,7 @@ def q_realtime_por_dia(session, tx_day: str):
     La usarías si implementas un monitor más 'live'.
     """
     cql = """
-    SELECT tx_day, user_id, account_id, tx_id, amount, type_tx, state, account_qty, user_qty, tx_date
+    SELECT tx_day, user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM realtime_transactions
     WHERE tx_day = %s
     ORDER BY tx_id DESC;
@@ -279,7 +285,7 @@ def q_transacciones_fuera_de_rango_global(session, limit: int = 100):
     Tabla: out_of_range_transactions.
     Se usa en: monitor de amenazas -> opción 1.
     """
-    cql = "SELECT user_id, account_id, tx_id, amount, type_tx, state, account_qty, user_qty, tx_date FROM out_of_range_transactions;"
+    cql = "SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date FROM out_of_range_transactions;"
     rows = list(session.execute(cql))
     # Podrías reordenar por amount desc si quieres:
     rows.sort(key=lambda r: float(r.amount), reverse=True)
@@ -291,7 +297,7 @@ def q_transacciones_fuera_de_rango_usuario(session, user_id: int, limit: int = 5
     Versión filtrada por usuario.
     """
     cql = f"""
-    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_qty, user_qty, tx_date
+    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM out_of_range_transactions
     WHERE user_id = %s
     LIMIT {limit};
@@ -306,7 +312,7 @@ def q_intentos_rechazados_global(session, limit: int = 100):
     Tabla: rejected_attempts_by_user.
     Se usa en: monitor de amenazas -> opción 2.
     """
-    cql = "SELECT user_id, account_id, tx_id, amount, type_tx, state, account_qty, user_qty, tx_date FROM rejected_attempts_by_user;"
+    cql = "SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date FROM rejected_attempts_by_user;"
     rows = list(session.execute(cql))
     return rows[:limit]
 
@@ -316,7 +322,7 @@ def q_intentos_rechazados_usuario(session, user_id: int):
     Intentos rechazados por usuario.
     """
     cql = """
-    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_qty, user_qty, tx_date
+    SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM rejected_attempts_by_user
     WHERE user_id = %s;
     """
@@ -378,17 +384,27 @@ def q_cambios_estado_por_usuario(session, user_id: int):
     """
     return session.execute(cql, (user_id,))
 
-# ===========================
+
 # FUNCIONES DE PRESENTACIÓN
-# ===========================
 
 def show_historial_transaccional(session, user_id, limit=100):
     rows = q_historial_transaccional(session, user_id, limit)
     print_table(
         rows,
-        columns=["tx_date", "account_id", "tx_id", "amount", "type_tx", "state"],
-        title=f"[📄 Historial transaccional del usuario {user_id}]"
+        columns=[
+            "tx_date",
+            "account_id",   # cuenta origen
+            "account_dty",  # cuenta destino
+            "user_dty",     # usuario destino
+            "tx_id",
+            "amount",
+            "type_tx",
+            "state",
+        ],
+        title=f"[📄 Historial transaccional del usuario {user_id} (origen → destino)]"
     )
+
+
 
 
 def show_transacciones_recibidas(session, user_id, limit=50):
@@ -404,9 +420,19 @@ def show_transferencias_usuario(session, user_id):
     rows = q_transferencias_por_usuario(session, user_id)
     print_table(
         rows,
-        columns=["tx_date", "account_id", "tx_id", "amount", "type_tx", "state"],
-        title=f"[🔄 Transferencias internas (pitufeo) user_id={user_id}]"
+        columns=[
+            "tx_date",
+            "account_id",   # origen
+            "account_dty",  # destino
+            "user_dty",     # usuario destino
+            "tx_id",
+            "amount",
+            "type_tx",
+            "state",
+        ],
+        title=f"[🔄 Transferencias internas (pitufeo) user_id={user_id} (origen → destino)]"
     )
+
 
 
 def show_cambios_estado_usuario(session, user_id):
@@ -422,8 +448,18 @@ def show_transacciones_fuera_de_rango_global(session, limit=100):
     rows = q_transacciones_fuera_de_rango_global(session, limit)
     print_table(
         rows,
-        columns=["user_id", "tx_date", "account_id", "tx_id", "amount", "type_tx", "state"],
-        title="[🚨 Transacciones fuera de rango / umbral]"
+        columns=[
+            "user_id",
+            "tx_date",
+            "account_id",   # origen
+            "account_dty",  # destino
+            "user_dty",     # usuario destino
+            "tx_id",
+            "amount",
+            "type_tx",
+            "state",
+        ],
+        title="[🚨 Transacciones fuera de rango / umbral (origen → destino)]"
     )
 
 
@@ -431,9 +467,20 @@ def show_intentos_rechazados_global(session, limit=100):
     rows = q_intentos_rechazados_global(session, limit)
     print_table(
         rows,
-        columns=["user_id", "tx_date", "account_id", "tx_id", "amount", "state", "type_tx"],
-        title="[⛔ Intentos de operación rechazados / fallidos]"
+        columns=[
+            "user_id",
+            "tx_date",
+            "account_id",   # origen
+            "account_dty",  # destino
+            "user_dty",
+            "tx_id",
+            "amount",
+            "state",
+            "type_tx",
+        ],
+        title="[⛔ Intentos de operación rechazados / fallidos (origen → destino)]"
     )
+
 
 
 def show_top_cuentas_global(session, limit=20):
