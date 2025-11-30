@@ -1,6 +1,10 @@
 device_id,device_location,dgraph.type
-DEV_3001,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
-DEV_3002,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
-DEV_FRAUD_RING_X,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
-DEV_3005,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
-DEV_3006,"{""type"":""Point"", ""coordinates"":[-99.1, 19.4]}",Device
+DEV_iPhone_13,"{""type"":""Point"", ""coordinates"":[-99.1332, 19.4326]}",Device
+DEV_Windows_11,"{""type"":""Point"", ""coordinates"":[-99.1332, 19.4326]}",Device
+DEV_Macbook_Pro,"{""type"":""Point"", ""coordinates"":[-99.1332, 19.4326]}",Device
+DEV_Linux_Mint,"{""type"":""Point"", ""coordinates"":[-103.3496, 20.6597]}",Device
+DEV_TOR_Browser,"{""type"":""Point"", ""coordinates"":[37.6173, 55.7558]}",Device
+DEV_Linux_Headless,"{""type"":""Point"", ""coordinates"":[37.6173, 55.7558]}",Device
+DEV_Android_Emu,"{""type"":""Point"", ""coordinates"":[37.6173, 55.7558]}",Device
+DEV_Pixel_6,"{""type"":""Point"", ""coordinates"":[-103.3496, 20.6597]}",Device
+DEV_iPhone_12,"{""type"":""Point"", ""coordinates"":[-103.4000, 20.7000]}",Device
