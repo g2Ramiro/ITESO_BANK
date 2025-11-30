@@ -1,3 +1,8 @@
 device_id,ip_addr
-DEV_3001,10.0.0.3001
-DEV_FRAUD_RING_X,192.168.66.6
+DEV_iPhone_13,187.210.120.33
+DEV_Linux_Mint,189.200.10.10
+DEV_TOR_Browser,88.102.55.33
+DEV_Linux_Headless,172.98.200.44
+DEV_Android_Emu,201.55.33.11
+DEV_Pixel_6,10.20.30.40
+DEV_iPhone_12,189.200.10.10
