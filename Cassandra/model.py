@@ -188,7 +188,6 @@ CREATE_TRANSACTION_STATUS_CHANGES_TABLE = """
 def q_historial_transaccional(session, user_id: int, limit: int = 100):
     """
     Historial completo de movimientos de un usuario, ordenado por fecha desc y cuenta.
-    Se usa en: menú investigación -> opción 4.
     """
     cql = f"""
     SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
@@ -203,8 +202,7 @@ def q_historial_transaccional(session, user_id: int, limit: int = 100):
 # 2) Operaciones de mayor cuantía histórica (Cassandra #2)
 def q_top_operaciones_por_usuario(session, user_id: int, limit: int = 20):
     """
-    Top N operaciones de mayor monto para un usuario.
-    Se usa en: analítica forense -> opción 3.
+    Top operaciones de mayor monto para un usuario.
     """
     cql = f"""
     SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
@@ -219,9 +217,7 @@ def q_top_operaciones_por_usuario(session, user_id: int, limit: int = 20):
 # 3) Usuarios con mayor frecuencia transaccional (Cassandra #3)
 def q_cuentas_por_usuario(session, user_id: int):
     """
-    Cuentas de un usuario ordenadas por número de transacciones (desc).
-    Tabla: accounts_by_transactions.
-    Se usa como base para 'usuarios con mayor frecuencia' (analítica forense opción 2).
+    Cuentas de un usuario ordenadas por número de transacciones (desc)
     """
     cql = """
     SELECT user_id, account_id, total_transacciones, account_balance
@@ -249,9 +245,7 @@ def q_top_cuentas_global(session, limit: int = 50):
 # 4) Transferencias internas (Cassandra #4)
 def q_transferencias_por_usuario(session, user_id: int):
     """
-    Transferencias hechas por un usuario (out), microdepósitos, etc.
-    Tabla: transfers_by_user.
-    Se usa en: investigación -> opción 6 (posible pitufeo).
+    Transferencias hechas por un usuario
     """
     cql = """
     SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
@@ -265,9 +259,7 @@ def q_transferencias_por_usuario(session, user_id: int):
 # 6) Transacciones en tiempo real / por día (Cassandra #6)
 def q_realtime_por_dia(session, tx_day: str):
     """
-    Transacciones de un día lógico (tx_day), por ejemplo '2024-10-01'.
-    Tabla: realtime_transactions.
-    La usarías si implementas un monitor más 'live'.
+    Transacciones de un día lógico
     """
     cql = """
     SELECT tx_day, user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
@@ -281,13 +273,10 @@ def q_realtime_por_dia(session, tx_day: str):
 # 8) Transacciones fuera de rango/umbral (Cassandra #8)
 def q_transacciones_fuera_de_rango_global(session, limit: int = 100):
     """
-    Lista global de transacciones fuera de rango (todas las particiones).
-    Tabla: out_of_range_transactions.
-    Se usa en: monitor de amenazas -> opción 1.
+    Lista global de transacciones fuera de rango
     """
     cql = "SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date FROM out_of_range_transactions;"
     rows = list(session.execute(cql))
-    # Podrías reordenar por amount desc si quieres:
     rows.sort(key=lambda r: float(r.amount), reverse=True)
     return rows[:limit]
 
@@ -308,9 +297,7 @@ def q_transacciones_fuera_de_rango_usuario(session, user_id: int, limit: int = 5
 # 9) Intentos de operación rechazados (Cassandra #9)
 def q_intentos_rechazados_global(session, limit: int = 100):
     """
-    Global: trae todos los intentos rechazados / fallidos.
-    Tabla: rejected_attempts_by_user.
-    Se usa en: monitor de amenazas -> opción 2.
+   trae todos los intentos rechazados / fallidos.
     """
     cql = "SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date FROM rejected_attempts_by_user;"
     rows = list(session.execute(cql))
@@ -333,8 +320,6 @@ def q_intentos_rechazados_usuario(session, user_id: int):
 def q_transacciones_recibidas_usuario(session, user_id: int, limit: int = 50):
     """
     Transacciones recibidas por un usuario (entrantes).
-    Tabla: received_transactions_by_user.
-    Se usa en: investigación -> opción 5.
     """
     cql = f"""
     SELECT user_id, date, tx_id, account_id, sender_acc_id, amount, status, tx_type
@@ -349,8 +334,6 @@ def q_transacciones_recibidas_usuario(session, user_id: int, limit: int = 50):
 def q_duplicados_global(session, limit: int = 100):
     """
     Auditoría global de transacciones duplicadas.
-    Tabla: duplicate_transactions_by_user.
-    Se usa en: analítica forense -> opción 8.
     """
     cql = "SELECT user_id, date, tx_id, account_id, sender_acc_id, amount, status, tx_type FROM duplicate_transactions_by_user;"
     rows = list(session.execute(cql))
@@ -373,9 +356,6 @@ def q_duplicados_usuario(session, user_id: int):
 def q_cambios_estado_por_usuario(session, user_id: int):
     """
     Historial de cambios de estado de transacciones para un usuario.
-    Tabla: transaction_status_changes.
-    OJO: La clave primaria es (trs_id, change_date), así que aquí usamos ALLOW FILTERING.
-    Se usa en: investigación -> opción 7.
     """
     cql = """
     SELECT trs_id, account_id, user_id, old_status, new_status, change_date, change_reason
@@ -517,3 +497,4 @@ def show_duplicados_global(session, limit=100):
         columns=["user_id", "date", "account_id", "sender_acc_id", "tx_id", "amount", "status"],
         title="[🧬 Auditoría de transacciones duplicadas]"
     )
+
