@@ -1,6 +1,0 @@
-user_id,account_id,tx_id,amount,type_tx,state,account_qty,user_qty,tx_date
-3003,ACCT-3003-A,3001,-5.0,online_purchase,completed,2,1,2024-07-20
-3003,ACCT-3003-A,3002,-5.0,online_purchase,completed,2,1,2024-07-20
-3004,ACCT-3004-B,4005,50000.0,international_in_transfer,completed,4,1,2024-10-01
-3004,ACCT-3004-B,4004,100000.0,international_in_transfer,completed,4,1,2024-10-01
-3004,ACCT-3004-B,4006,10000.0,international_in_transfer,review,4,1,2024-10-01
