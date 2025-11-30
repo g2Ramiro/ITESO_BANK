@@ -93,25 +93,26 @@ def menu_investigacion_cliente(session, client, mongo_client):
     while True:
         print(f"\n[OBJETIVO: {cliente_id}] Seleccione vector de análisis:")
         print("   --- 📋 Perfil Digital y Huella ---")
-        print("   1. Perfil completo y Cuentas asociadas (Mongo #5)")
-        print("   2. Dispositivos y Huella Digital (Mongo #8)")
-        print("   3. Bitácora de Accesos/Login (Mongo #2)")
+        print("   1. Perfil completo y Cuentas asociadas ")
+        print("   2. Dispositivos y Huella Digital ")
+        print("   3. Bitácora de Accesos/Login ")
 
-        print("   --- 💸 Análisis Transaccional (Cassandra) ---")
-        print("   4. Historial de movimientos (Cassandra #1)")
-        print("   5. Flujo de dinero entrante (Cassandra #10)")
-        print("   6. Transferencias internas (Posible Pitufeo) (Cassandra #4)")
-        print("   7. Estado de transacciones en curso (Cassandra #12)")
+        print("   --- 💸 Análisis Transaccional ---")
+        print("   4. Historial de movimientos ")
+        print("   5. Flujo de dinero entrante ")
+        print("   6. Transferencias realizadas ")
+        print("   7. Estado de transacciones en curso ")
 
         print("   --- ⚠️ Evaluación de Riesgo ---")
-        print("   8. Calcular Risk Score del sujeto (Mongo #12)")
-        print("   9. Mapa de conexiones sospechosas (Dgraph #6)")
+        print("   8. Calcular Risk Score del sujeto ")
+        print("   9. Mapa de conexiones sospechosas ")
 
         print("   0. 🔙 Abortar investigación / Nuevo objetivo")
 
         opcion = input("   >> ").strip()
 
         # Opciones del menu cliente
+        # MongoDB
         if opcion == "1":
             #Perfil completo y Cuentas asociadas (Mongo #5)
             data = mongo_queries.get_user_financial_view(mongo_db, cliente_id)
@@ -171,6 +172,7 @@ def menu_investigacion_cliente(session, client, mongo_client):
             else:
                 print("❌ No se pudo calcular el riesgo (¿El usuario existe en MongoDB?).")
 
+        #Dgraph
         elif opcion == "9":
             # Mapa de conexiones sospechosas (Dgraph #6)
             print(f"\n⏳ Consultando grafo de riesgo para: {cliente_id}...")
@@ -249,16 +251,16 @@ def menu_investigacion_cliente(session, client, mongo_client):
             print("Comando no reconocido.")
 
 
-# =====================================================================
-# 2. MONITOR DE AMENAZAS
-# =====================================================================
-def menu_monitor_amenazas(session, client):
+
+# 2 Monitor de amenazas
+def menu_monitor_amenazas(session, client, mongo_client):
+    mongo_db = mongo_client[MONGO_DB_NAME]
     while True:
         print("\n============== 🛡️ MONITOR DE AMENAZAS GLOBALES ==============")
         print("   --- 🚨 Alertas Activas (Live) ---")
-        print("   1. Transacciones fuera de rango/umbral (Cassandra #8)")
-        print("   2. Intentos de operación rechazados (Cassandra #9)")
-        print("   3. Alerta masiva: Cambios IP/Dispositivo (Mongo #11)")
+        print("   1. Transacciones fuera de rango/umbral ")
+        print("   2. Intentos de operación rechazados ")
+        print("   3. Alerta masiva: Cambios IP/Dispositivo ")
 
         print("   --- 🕸️ Detección de Patrones Complejos (Graph) ---")
         print("   4. Anillos de Colaboración Fraudulenta (Dgraph #1)")
@@ -268,28 +270,59 @@ def menu_monitor_amenazas(session, client):
         print("   8. Rastreo de rutas de dinero ilícito (Dgraph #9)")
 
         print("   --- 🚩 Watchlists y Anomalías ---")
-        print("   9. Usuarios en Lista Negra / Flageados (Mongo #6)")
-        print("   10. Comportamiento errático de cuentas (Mongo #7)")
+        print("   9. Usuarios en Lista Negra / Flageados ")
+        print("   10. Comportamiento errático de cuentas ")
 
         print("   0. 🔙 Regresar al menú principal")
 
         opcion = input("   >> ").strip()
 
-        # --- CASSANDRA ---
+        # Cassandra
         if opcion == "1":
             cas.show_transacciones_fuera_de_rango_global(session, limit=100)
         elif opcion == "2":
             cas.show_intentos_rechazados_global(session, limit=100)
 
-        # --- MONGO DB ---
+        # MongoDB
         elif opcion == "3":
-            ejecutar("MongoDB", 11, "Cambios masivos IP/Disp")
+            # Req 11: Alerta masiva cambios IP
+            alerts = mongo_queries.detect_suspicious_ip_changes(mongo_db)
+            print(f"\n🚨 ALERTAS DE RED (IPs Compartidas/Sospechosas):")
+            if not alerts:
+                print("   ✅ No se detectaron anomalías de red (Botnets).")
+            for a in alerts:
+                print(f"   🔴 IP: {a['ip_sospechosa']}")
+                print(f"      Usuarios ({len(a['analisis']['usuarios_involucrados'])}): {a['analisis']['usuarios_involucrados']}")
+                print(f"      Transacciones totales: {a['analisis']['volumen_txs']}")
         elif opcion == "9":
-            ejecutar("MongoDB", 6, "Cuentas Flageadas")
+            # Req 6: Cuentas Flageadas
+            flagged = mongo_queries.get_flagged_accounts(mongo_db)
+            print(f"\n🚩 CUENTAS CON ALERTAS ACTIVAS ({len(flagged)}):")
+            if not flagged:
+                print("   ✅ No hay cuentas marcadas en este momento.")
+            for acc in flagged:
+                print(f"   - {acc['cuenta']} | Tipo: {acc['tipo']} | Saldo: ${acc['saldo']:,.2f}")
+                print(f"     Dueño: {acc['propietario']['nombre']} (ID: {acc['propietario']['id']})")
+                print(f"     ⚠️ Motivo: {acc['alerta']['motivo']} (Fecha: {acc['alerta']['fecha']})\n")
         elif opcion == "10":
-            ejecutar("MongoDB", 7, "Comportamiento errático")
+            # Req 7: Comportamiento errático
+            erratic = mongo_queries.get_erratic_accounts(mongo_db, min_changes=1)
+            print(f"\n📉 CUENTAS INESTABLES (Cambios frecuentes de estado):")
+            if not erratic:
+                print("   ✅ Todas las cuentas son estables.")
+            for acc in erratic:
+                # Mostramos ID de cuenta y Número
+                print(f"   - 🆔 ID: {acc['account_id']} | 💳 Cuenta: {acc['cuenta']}")
+                print(f"     🔄 Total Cambios: {acc['total_cambios']}")
+                
+                # Mostrar último cambio registrado
+                if acc['historial_cambios']:
+                    last = acc['historial_cambios'][-1]
+                    fecha = last.get('fecha', 'N/A')
+                    print(f"     ⚠️ Último ({fecha}): {last.get('de')} -> {last.get('a')} [{last.get('razon')}]\n")
 
-        # --- DGRAPH ---
+
+        # DGraph
         elif opcion == "4":
             # Anillos de Colaboración
             dev_input = input("   Ingrese ID del Dispositivo sospechoso (ej: DEV_FRAUD_RING_X): ").strip() or "DEV_FRAUD_RING_X"
@@ -332,23 +365,23 @@ def menu_monitor_amenazas(session, client):
 # =====================================================================
 # 3. ANALÍTICA FORENSE
 # =====================================================================
-def menu_analitica_forense(session, client):
+def menu_analitica_forense(session, client, mongo_client):
+    mongo_db = mongo_client[MONGO_DB_NAME]
     while True:
         print("\n============== 📊 ANALÍTICA FORENSE Y REPORTES ==============")
-        print("   1. Top Cuentas por Volumen/Actividad (Cassandra #5)")
-        print("   2. Usuarios con mayor frecuencia transaccional (Cassandra #3)")
-        print("   3. Operaciones de mayor cuantía histórica (Cassandra #2)")
-        print("   4. Mapa global de saldos y usuarios (Mongo #5)")
-        print("   5. Auditoría de cuentas nuevas (Alto Riesgo) (Mongo #10)")
-        print("   6. Análisis de propagación de riesgo (Dgraph #10)")
-        print("   7. Mapa de calor geográfico (Dgraph #4)")
-        print("   8. Auditoría de duplicados (Cassandra #11)")
+        print("   1. Top Cuentas por Volumen/Actividad ")
+        print("   2. Usuarios con mayor frecuencia transaccional ")
+        print("   3. Operaciones de mayor cuantía histórica ")
+        print("   4. Auditoría de cuentas nuevas (Alto Riesgo) ")
+        print("   5. Análisis de propagación de riesgo (Dgraph #10)")
+        print("   6. Mapa de calor geográfico (Dgraph #4)")
+        print("   7. Auditoría de duplicados ")
 
         print("   0. 🔙 Regresar al menú principal")
 
         opcion = input("   >> ").strip()
 
-        # --- CASSANDRA ---
+        # Cassandra
         if opcion == "1":
             cas.show_top_cuentas_global(session, limit=20)
 
@@ -366,17 +399,52 @@ def menu_analitica_forense(session, client):
             else:
                 print("   ⚠ user_id debe ser numérico.")
 
-        elif opcion == "8":
+        elif opcion == "7":
             cas.show_duplicados_global(session, limit=100)
 
-        # --- MONGO DB ---
+        # MongoDB
+        # Req 10: Auditoria Cuentas Nuevas Alto Riesgo
         elif opcion == "4":
-            ejecutar("MongoDB", 5, "Mapa global de saldos y usuarios")
-        elif opcion == "5":
-            ejecutar("MongoDB", 10, "Auditoría de cuentas nuevas (alto riesgo)")
+            # REQ 10: Auditoría Cuentas Nuevas Alto Riesgo
+            print("\n--- 👶💸 AUDITORÍA: CUENTAS NUEVAS DE ALTO VALOR ---")
+            
+            # 1. Definimos los parámetros
+            dias_filtro = 1000
+            monto_filtro = 10000  # Bajamos a 1,000 para detectar tus ejemplos de $3,950
+            
+            # 2. Imprimimos qué estamos buscando
+            print(f"   🔎 Criterio: Cuentas creadas hace menos de {dias_filtro} días")
+            print(f"   🔎 Umbral: Transacciones mayores a ${monto_filtro:,.2f}")
+            print("   " + "-"*60)
 
-        # --- DGRAPH ---
-        elif opcion == "6":
+            # 3. Ejecutamos la consulta con esas variables
+            resultados = mongo_queries.get_high_risk_new_accounts(
+                mongo_db, 
+                days_threshold=dias_filtro, 
+                amount_threshold=monto_filtro
+            )
+            
+            if resultados:
+                print(f"\n   🚨 Se detectaron {len(resultados)} cuentas de riesgo:\n")
+                print(f"   {'CUENTA':<15} | {'CREADA':<12} | {'SALDO ACTUAL':<15} | {'Transacciones'}")
+                print("   " + "-"*60)
+                
+                for r in resultados:
+                    # Formateo seguro de fecha
+                    fecha = r['fecha_apertura'].strftime("%Y-%m-%d") if r.get('fecha_apertura') else "N/A"
+                    saldo = f"${r['saldo_actual']:,.2f}"
+                    txs = r['alerta']['total_txs_grandes']
+                    
+                    print(f"   {r['cuenta_riesgo']:<15} | {fecha:<12} | {saldo:<15} | {txs} operaciones")
+                    
+                    # Detalle de transacciones
+                    for tx in r['alerta']['detalle_txs']:
+                        print(f"      ↳ Transaction_id: {tx['tx_id']}: ${tx['monto']:,.2f} -> {tx['destino']}")
+            else:
+                print("   ✅ No se encontraron cuentas nuevas con movimientos sospechosos bajo estos criterios.")
+
+        # DGraph
+        elif opcion == "5":
             # Reutilizamos el query de risk scoring, pidiendo un usuario
             print("   Análisis de propagación de riesgo (Network Risk).")
             uid_input = input("   Ingrese ID de usuario semilla (ej: 3003): ").strip()
@@ -385,7 +453,7 @@ def menu_analitica_forense(session, client):
             else:
                 print("   ⚠ ID requerido.")
 
-        elif opcion == "7":
+        elif opcion == "6":
              # Mapa de calor geográfico
              print("   Configuración de búsqueda Geo (Default: CDMX)")
              lat = input("   Latitud (default 19.4): ").strip() or "19.4"
@@ -403,9 +471,7 @@ def menu_analitica_forense(session, client):
             print("Comando no reconocido.")
 
 
-# =====================================================================
-# MENÚ PRINCIPAL
-# =====================================================================
+# Menu principal
 def main():
     # 1. Conexión Dgraph
     try:
@@ -457,13 +523,13 @@ def main():
 
         elif opcion == "2":
             if session:
-                menu_monitor_amenazas(session, client)
+                menu_monitor_amenazas(session, client, mongo_client)
             else:
                 print("❌ Cassandra no disponible.")
 
         elif opcion == "3":
             if session:
-                menu_analitica_forense(session, client)
+                menu_analitica_forense(session, client, mongo_client)
             else:
                 print("❌ Cassandra no disponible.")
 

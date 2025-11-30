@@ -103,6 +103,7 @@ def get_erratic_accounts(db, min_changes=1):
         {"$match": {"status_history": {"$exists": True, "$not": {"$size": 0}}}},
         {"$project": {
             "_id": 0,
+            "account_id": 1,
             "cuenta": "$numero_cuenta",
             "total_cambios": {"$size": "$status_history"},
             "historial_cambios": {
@@ -197,7 +198,7 @@ def find_users_by_name(db, name_input):
     return list(db.users.aggregate(pipeline))
 
 # Req 10: Cuentas Nuevas de Alto Riesgo
-def get_high_risk_new_accounts(db, days_threshold=1000, amount_threshold=1000):
+def get_high_risk_new_accounts(db, days_threshold=365, amount_threshold=1000):
     """
     Cruza cuentas recientes con transacciones de alto valor.
     """
@@ -219,7 +220,11 @@ def get_high_risk_new_accounts(db, days_threshold=1000, amount_threshold=1000):
                         "$match": {
                             "$expr": {
                                 "$and": [
-                                    {"$eq": ["$flow.account_origen", "$$acc_id"]},
+                                    # CAMBIO: Usamos $or para ver si la cuenta envió O recibió
+                                    {"$or": [
+                                        {"$eq": ["$flow.account_origen", "$$acc_id"]},
+                                        {"$eq": ["$flow.account_destino", "$$acc_id"]}
+                                    ]},
                                     {"$gte": ["$amount_details.total", amount_threshold]}
                                 ]
                             }
@@ -242,7 +247,7 @@ def get_high_risk_new_accounts(db, days_threshold=1000, amount_threshold=1000):
         {"$match": {"transacciones_sospechosas.0": {"$exists": True}}},
         {"$project": {
             "_id": 0,
-            "cuenta_riesgo": "$numero_cuenta",
+            "cuenta_riesgo": "$account_id",
             "fecha_apertura": "$fecha_creacion",
             "saldo_actual": "$saldo_actual",
             "alerta": {
