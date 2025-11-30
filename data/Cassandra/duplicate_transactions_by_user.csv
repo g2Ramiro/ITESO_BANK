@@ -1,0 +1,5 @@
+user_id,date,tx_id,account_id,sender_acc_id,amount,status,tx_type
+3004,2024-07-21,3001,ACCT-3004-B,ACCT-3002-B,14999.50,suspected_duplicate,incoming_transfer
+3004,2024-07-21,3002,ACCT-3004-B,ACCT-3002-B,14999.50,suspected_duplicate,incoming_transfer
+3001,2024-11-13,3003,ACCT-3001-B,ACCT-3003-B,75.25,suspected_duplicate,incoming_transfer
+3001,2024-11-13,3004,ACCT-3001-B,ACCT-3003-B,75.25,suspected_duplicate,incoming_transfer

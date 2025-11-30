@@ -1,0 +1,8 @@
+account_id,status,alert_id,date_detected,user_id,trs_id,alert_type,riskscore,descrip
+ACCT-3003-A,activa,1,2024-07-20T07:00:00,3003,1003,VPN_ACTIVITY,60,"Flag por accesos desde VPN detectados"
+ACCT-3003-B,suspendida,2,2024-07-22T10:00:00,3003,1004,BOT_PATTERN,80,"Patrón de micro-transacciones (posible bot)"
+ACCT-3004-A,bloqueada,3,2024-10-01T05:05:00,3004,1005,BOTNET_ACCESS,95,"Accesos simultáneos desde múltiples IPs / botnet detected"
+ACCT-3004-B,bloqueada,4,2024-10-01T06:30:00,3004,1006,HIGH_RISK_FUNDS,90,"Fondos provenientes de países de alto riesgo"
+ACCT-3004-C,vencida,5,2024-11-05T09:10:00,3004,1007,AUTOMATED_PAYMENTS_FAIL,70,"Patrón de pagos automatizados fallidos"
+ACCT-3004-D,cerrada,6,2024-12-01T08:00:00,3004,1008,GLOBAL_ACTIVITY_INCONSISTENT,85,"Cierre por investigación y actividad inconsistente"
+ACCT-3005-A,activa,7,2024-11-01T08:00:00,3005,1009,GHOST_ACCOUNT,65,"Cuenta fantasma (0 logins desde 2022)"

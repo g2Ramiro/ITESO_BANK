@@ -1,0 +1,8 @@
+tx_day,user_id,account_id,tx_id,amount,type_tx,state,account_dty,user_dty,tx_date
+2024-10-01,3004,ACCT-3004-B,1005,20000.00,transfer_out,completed,ACCT-3004-D,3004,2024-10-01
+2024-10-02,3004,ACCT-3004-B,1006,99999.99,transfer_out,completed,ACCT-3005-A,3005,2024-10-02
+2024-11-10,3006,ACCT-3006-A,1007,120.50,transfer_out,completed,ACCT-3001-A,3001,2024-11-10
+2024-11-11,3004,ACCT-3004-C,1008,3000.00,transfer_out,completed,ACCT-3002-A,3002,2024-11-11
+2024-11-12,3002,ACCT-3002-A,1009,450.00,transfer_out,completed,ACCT-3006-A,3006,2024-11-12
+2024-11-13,3003,ACCT-3003-B,1010,75.25,transfer_out,completed,ACCT-3001-B,3001,2024-11-13
+2024-09-01,3001,ACCT-3001-A,2001,8000.00,transfer_out,rejected,ACCT-3004-B,3004,2024-09-01
