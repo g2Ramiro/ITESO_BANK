@@ -166,53 +166,9 @@ def menu_investigacion_cliente(session, client, mongo_client):
         elif opcion == "9":
             # Mapa de conexiones sospechosas (Dgraph #6)
             print(f"\n⧗ Consultando grafo de riesgo para: {cliente_id}...")
+            dg_qry.query_risk_scoring(client, str(cliente_id))
 
-            try:
-                # 1. Obtenemos datos PUROS (El diccionario que retorna la función)
-                user_node = dg_qry.query_risk_scoring(client, str(cliente_id))
-
-                # 2. Formateamos en el MAIN
-                if user_node:
-                    nombre = user_node.get('name', 'Desconocido')
-                    print(f"\n--- 🕸️ MAPA DE CONEXIONES: {nombre} (ID: {cliente_id}) ---")
-
-                    devices = user_node.get('uses_device', [])
-
-                    if not devices:
-                        print("ℹ  Este usuario no tiene dispositivos registrados en el grafo.")
-
-                    for dev in devices:
-                        # Datos del dispositivo
-                        dev_id = dev.get('device_id', 'N/A')
-                        loc = dev.get('device_location', 'Ubicación desconocida')
-                        print(f"\n📱 Dispositivo: {dev_id} [{loc}]")
-
-                        # A) Análisis de IPs (Anidado dentro del dispositivo)
-                        ips = dev.get('has_ip', [])
-                        if ips:
-                            for ip in ips:
-                                ip_addr = ip.get('ip_addr')
-                                rep = ip.get('reputation', 0)
-                                # Icono según reputación
-                                icon_ip = "🔴" if rep > 50 else ("🟠" if rep > 20 else "🟢")
-                                print(f"   └── 🌐 IP: {ip_addr} {icon_ip} (Rep: {rep})")
-                        else:
-                            print("   └── ⚠ Sin historial de IPs.")
-
-                        # B) Análisis de Colusión (Usuarios compartidos)
-                        otros = dev.get('used_by_others', [])
-                        if otros:
-                            print(f"   ⚠ ALERTA: Dispositivo COMPARTIDO con {len(otros)} usuarios:")
-                            for u in otros:
-                                print(f"      - 👤 {u.get('name')} (ID: {u.get('user_id')})")
-                        else:
-                            print("   ✔ Dispositivo de uso exclusivo.")
-
-                else:
-                    print("✖ Usuario no encontrado (Verifica que el ID esté sincronizado).")
-
-            except Exception as e:
-                print(f"✖ Error técnico en Dgraph: {e}")
+                
 
         # Queries Cassandra
         elif opcion in {"4", "5", "6", "7"}:
@@ -530,8 +486,8 @@ def main():
 
         elif opcion == "4":
             print("\n[⚙️ MODO ADMINISTRADOR]")
-            print("\n1. Poblar Cassandra, Mongo, Dgraph (Carga Inicial)")
-            print("2. DROP ALL DATA (Simulación)")
+            print("\n1. Poblar Cassandra, Mongo, Dgraph ")
+            print("2. DROP ALL DATA ")
             print("\n0. Salir")
             sub_op = input(">> ").strip()
 
@@ -575,7 +531,7 @@ def main():
                         try:
                             # Esto borra la base de datos completa 'fraude_financiero'
                             mongo_client.drop_database(MONGO_DB_NAME)
-                            print(f"Base de datos Mongo 'fraude_financiero' eliminada.")
+                            print(f"🗑️ Base de datos Mongo 'fraude_financiero' eliminada.")
                         except Exception as e:
                             print(f"✖ Error borrando Mongo: {e}")
                     else:

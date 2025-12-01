@@ -3,8 +3,7 @@ import os
 from datetime import datetime
 from pymongo import ASCENDING, DESCENDING
 
-# --- Helpers ---
-
+# Fechas
 def parse_mongo_date(value):
     if not value:
         return None
@@ -22,13 +21,13 @@ def parse_mongo_date(value):
         except ValueError:
             return None
 
-# --- Funciones Internas de Carga ---
 
+#Cargar usuarios
 def _load_users(db, filepath):
     collection = db["users"]
     
     if not os.path.exists(filepath):
-        print(f"⚠️ Archivo no encontrado: {filepath}")
+        print(f" Archivo no encontrado: {filepath}")
         return
 
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -48,7 +47,6 @@ def _load_users(db, filepath):
             
         if "logins" in doc and isinstance(doc["logins"], list):
             for login in doc["logins"]:
-                # Corrección: El JSON suele traer 'ts', tu código buscaba 'timestamp'
                 if "ts" in login: 
                     login["ts"] = parse_mongo_date(login["ts"])
                 elif "timestamp" in login:
@@ -58,13 +56,12 @@ def _load_users(db, filepath):
 
     if processed_docs:
         collection.insert_many(processed_docs)
-        print(f"✅ Insertados {len(processed_docs)} documentos en 'users'.")
+        #print(f"Insertados {len(processed_docs)} documentos en 'users'.")
     
-    # Índices [cite: 346, 348]
     collection.create_index([("user_id", ASCENDING)], unique=True)
     collection.create_index([("email", ASCENDING)], unique=True)
     collection.create_index([("logins.ip", ASCENDING)])
-    print("   Índices de 'users' creados.")
+    #print("   Índices de 'users' creados.")
 
 def _load_accounts(db, filepath):
     collection = db["accounts"]
@@ -97,19 +94,19 @@ def _load_accounts(db, filepath):
 
     if processed_docs:
         collection.insert_many(processed_docs)
-        print(f"✅ Insertados {len(processed_docs)} documentos en 'accounts'.")
+        #print(f" Insertados {len(processed_docs)} documentos en 'accounts'.")
 
-    # Índices [cite: 379, 380]
+  
     collection.create_index([("account_id", ASCENDING)], unique=True)
     collection.create_index([("user_id", ASCENDING)])
     collection.create_index([("numero_cuenta", ASCENDING)], unique=True)
-    print("   Índices de 'accounts' creados.")
+    #print("   Índices de 'accounts' creados.")
 
 def _load_transactions(db, filepath):
     collection = db["transactions_meta"] 
     
     if not os.path.exists(filepath):
-        print(f"⚠️ Archivo no encontrado: {filepath}")
+        print(f"Archivo no encontrado: {filepath}")
         return
 
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -135,9 +132,9 @@ def _load_transactions(db, filepath):
         
     if processed_docs:
         collection.insert_many(processed_docs)
-        print(f"✅ Insertados {len(processed_docs)} documentos en 'transactions_meta'.")
+        #print(f"Insertados {len(processed_docs)} documentos en 'transactions_meta'.")
     
-    # Índices [cite: 415, 419]
+
     collection.create_index([("transaction_id", ASCENDING)], unique=True)
     collection.create_index([("timestamp", DESCENDING)]) 
     collection.create_index([("flow.account_origen", ASCENDING)])
@@ -146,21 +143,20 @@ def _load_transactions(db, filepath):
     collection.create_index([("digital_fingerprint.device_model", ASCENDING)])
     collection.create_index([("user_id", ASCENDING), ("timestamp", DESCENDING)])
 
-    print("   Índices de 'transactions_meta' creados.")
+    #print("   Índices de 'transactions_meta' creados.")
 
-# --- FUNCIÓN PRINCIPAL EXPORTABLE ---
 
+# Funcion principal
 def populate_database(db, data_dir="data/mongo"):
     print(f"📂 Buscando archivos en: {data_dir}")
     
-    # 1. Limpieza (Idempotencia)
-    print("🧹 Limpiando colecciones existentes...")
+    # Limpiamos
+    print("Limpiando colecciones existentes...")
     db.users.drop()
     db.accounts.drop()
     db.transactions_meta.drop()
     
-    # 2. Carga
-    # Usamos os.path.join para evitar errores de rutas en Windows/Mac/Linux
+    # Carga
     _load_users(db, os.path.join(data_dir, "users.json"))
     _load_accounts(db, os.path.join(data_dir, "accounts.json"))
     _load_transactions(db, os.path.join(data_dir, "transactions_meta.json"))

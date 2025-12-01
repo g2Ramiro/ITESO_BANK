@@ -3,11 +3,10 @@ from datetime import datetime, timedelta
 
 # Req 5. Vistas de usuario
 def get_user_financial_view(db, user_id):
-    """
-    Obtiene el perfil completo del usuario, sumando saldos de todas sus cuentas.
-    """
+    
+    #Obtiene el perfil completo del usuario, saldo global, cuentas y saldos
     try:
-        uid = int(user_id) # Conversión forzada a INT
+        uid = int(user_id) 
     except ValueError:
         return None
 
@@ -59,9 +58,7 @@ def get_user_financial_view(db, user_id):
 # Req 6: Monitoreo de Cuentas Flageadas
 
 def get_flagged_accounts(db):
-    """
-    Lista cuentas sospechosas y los datos de contacto de su dueño.
-    """
+    # Cuentas sospechosas y el dueno de la cuenta
     pipeline = [
         {"$match": {"flagged": True}},
         {
@@ -95,9 +92,6 @@ def get_flagged_accounts(db):
 
 # Req 7: Cuentas con cambios frecuentes de estatus 
 def get_erratic_accounts(db, min_changes=1):
-    """
-    Detecta inestabilidad en cuentas basada en su historial de estados.
-    """
     pipeline = [
         # Filtrar cuentas que tengan historial
         {"$match": {"status_history": {"$exists": True, "$not": {"$size": 0}}}},
@@ -127,11 +121,9 @@ def get_erratic_accounts(db, min_changes=1):
 
 # Req 8: Dispositivos por Usuario
 def get_user_devices(db, user_id):
-    """
-    Extrae la huella digital (Dispositivos e IPs) de los logins.
-    """
+   # Dispositivos e IP
     try:
-        uid = int(user_id) # Conversión forzada a INT
+        uid = int(user_id) 
     except ValueError:
         return None
 
@@ -147,7 +139,6 @@ def get_user_devices(db, user_id):
             "conteo_accesos": {"$sum": 1}
         }},
         {"$project": {
-            # Usamos $toString para evitar el error de concatenar Int con String
             "usuario": {
                 "$concat": [
                     {"$toString": "$_id"}, " - ", 
@@ -167,12 +158,6 @@ def get_user_devices(db, user_id):
 
 #Req 9: Busqueda flexible de cuentas
 def find_users_by_name(db, name_input):
-    """
-    Busca usuarios por nombre o apellido (case insensitive).
-    Retorna una lista de candidatos con su ID.
-    """
-    # Creamos un patrón regex para buscar coincidencias parciales
-    # 'i' significa case-insensitive (ignora mayúsculas)
     regex_pattern = {"$regex": name_input, "$options": "i"}
     
     pipeline = [
@@ -192,25 +177,20 @@ def find_users_by_name(db, name_input):
                 "email": 1
             }
         },
-        {"$limit": 5} # Limitamos a 5 para no llenar la pantalla
+        {"$limit": 5} 
     ]
     
     return list(db.users.aggregate(pipeline))
 
 # Req 10: Cuentas Nuevas de Alto Riesgo
 def get_high_risk_new_accounts(db, days_threshold=365, amount_threshold=1000):
-    """
-    Cruza cuentas recientes con transacciones de alto valor.
-    """
-    # Nota: days_threshold alto para capturar datos de ejemplo antiguos
     date_limit = datetime.utcnow() - timedelta(days=days_threshold)
     
     pipeline = [
-        # 1. Filtrar cuentas nuevas
+        # Filtrar cuentas nuevas(tiempo threshold)
         {"$match": {"fecha_creacion": {"$gte": date_limit}}},
         
-        # 2. Buscar transacciones grandes asociadas
-        # Nota: account_id (string) vs flow.account_origen (string)
+        # Buscar transacciones grandes asociadas
         {
             "$lookup": {
                 "from": "transactions_meta",
@@ -220,7 +200,6 @@ def get_high_risk_new_accounts(db, days_threshold=365, amount_threshold=1000):
                         "$match": {
                             "$expr": {
                                 "$and": [
-                                    # CAMBIO: Usamos $or para ver si la cuenta envió O recibió
                                     {"$or": [
                                         {"$eq": ["$flow.account_origen", "$$acc_id"]},
                                         {"$eq": ["$flow.account_destino", "$$acc_id"]}
@@ -243,7 +222,7 @@ def get_high_risk_new_accounts(db, days_threshold=365, amount_threshold=1000):
                 "as": "transacciones_sospechosas"
             }
         },
-        # 3. Filtrar las que tengan coincidencias
+        # Filtrar
         {"$match": {"transacciones_sospechosas.0": {"$exists": True}}},
         {"$project": {
             "_id": 0,
@@ -260,9 +239,6 @@ def get_high_risk_new_accounts(db, days_threshold=365, amount_threshold=1000):
 
 # Req 11: Detección Global de Cambio IP/Dispositivo
 def detect_suspicious_ip_changes(db):
-    """
-    Detecta IPs compartidas por múltiples usuarios (posible Botnet).
-    """
     pipeline = [
         {"$group": {
             "_id": "$digital_fingerprint.ip",
@@ -289,19 +265,15 @@ def detect_suspicious_ip_changes(db):
 
 # Req 12: Score de Riesgo 
 def calculate_risk_score(db, user_id):
-    """
-    Calcula un puntaje de riesgo (0-100) basado en reglas de negocio.
-    """
     try:
-        uid = int(user_id) # Conversión forzada a INT
+        uid = int(user_id) 
     except ValueError:
         return None
 
-    # 1. Obtener datos de cuentas (Flagged)
     # Buscamos cuántas cuentas tiene marcadas
     flagged_count = db.accounts.count_documents({"user_id": uid, "flagged": True})
     
-    # 2. Obtener dispositivos (reutilizando query simple para no depender de func externa)
+    # Obtener dispositivos
     dev_pipeline = [
         {"$match": {"user_id": uid}},
         {"$unwind": "$logins"},
@@ -322,24 +294,23 @@ def calculate_risk_score(db, user_id):
         devs_list = dev_res[0].get("unique_devices", [])
         ips_list = dev_res[0].get("unique_ips", [])
     
-    # 3. CÁLCULO DEL SCORE (Lógica Python equivalente a lo probado en Mongosh)
+    # Score
     score = 0
     reasons = []
 
-    # Regla A: Cuentas castigadas
+    # Cuentas flag
     if flagged_count > 0:
         pts = 40 * flagged_count
         score += pts
         reasons.append(f"🚩 +{pts} pts: Tiene {flagged_count} cuenta(s) marcada(s).")
 
-    # Regla B: Granja de dispositivos
+    # Dispositivos
     if unique_dev_count >= 3:
         pts = 20
         score += pts
         reasons.append(f"📱 +{pts} pts: Uso excesivo de dispositivos ({unique_dev_count}).")
         
-    # Regla C: Software Sospechoso (Keywords)
-    # Convertimos a string mayúsculas para buscar fácil
+    # Software Sospechoso (Keywords)
     devs_str = str(devs_list).upper()
     ips_str = str(ips_list).upper()
     
