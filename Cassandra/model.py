@@ -214,7 +214,7 @@ def q_top_operaciones_por_usuario(session, user_id: int, limit: int = 20):
     return session.execute(cql, (user_id,))
 
 
-# 3) Usuarios con mayor frecuencia transaccional (Cassandra #3)
+# 3) cuentas con mayor frecuencia transaccional (Cassandra #3)
 def q_cuentas_por_usuario(session, user_id: int):
     """
     Cuentas de un usuario ordenadas por número de transacciones (desc)
@@ -497,4 +497,5 @@ def show_duplicados_global(session, limit=100):
         columns=["user_id", "date", "account_id", "sender_acc_id", "tx_id", "amount", "status"],
         title="[🧬 Auditoría de transacciones duplicadas]"
     )
+
 
