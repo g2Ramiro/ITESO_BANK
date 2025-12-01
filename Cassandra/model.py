@@ -193,7 +193,6 @@ def q_historial_transaccional(session, user_id: int, limit: int = 100):
     SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM transactions_by_user
     WHERE user_id = %s
-    ORDER BY tx_date DESC, account_id ASC
     LIMIT {limit};
     """
     return session.execute(cql, (user_id,))
@@ -223,7 +222,6 @@ def q_cuentas_por_usuario(session, user_id: int):
     SELECT user_id, account_id, total_transacciones, account_balance
     FROM accounts_by_transactions
     WHERE user_id = %s
-    ORDER BY total_transacciones DESC;
     """
     return session.execute(cql, (user_id,))
 
@@ -251,7 +249,6 @@ def q_transferencias_por_usuario(session, user_id: int):
     SELECT user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM transfers_by_user
     WHERE user_id = %s
-    ORDER BY user_dty ASC;
     """
     return session.execute(cql, (user_id,))
 
@@ -265,7 +262,6 @@ def q_realtime_por_dia(session, tx_day: str):
     SELECT tx_day, user_id, account_id, tx_id, amount, type_tx, state, account_dty, user_dty, tx_date
     FROM realtime_transactions
     WHERE tx_day = %s
-    ORDER BY tx_id DESC;
     """
     return session.execute(cql, (tx_day,))
 
@@ -497,5 +493,6 @@ def show_duplicados_global(session, limit=100):
         columns=["user_id", "date", "account_id", "sender_acc_id", "tx_id", "amount", "status"],
         title="[🧬 Auditoría de transacciones duplicadas]"
     )
+
 
 
